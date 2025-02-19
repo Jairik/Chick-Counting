@@ -1,5 +1,5 @@
-Camera Type(s): RGB, possibly an additional thermal
-Camera Placement: TBD, based on conveyor belt locations
-Number of cameras: 1 (optimally 2 depending on input ports on the Raspberry Pi module)
+Camera Type(s): RGB
+Camera Placement: Infront of drop with dividers
+Number of cameras: 1 
 Specs: 1080p resolution at 60 fps
 Where data is being sent: Raspberry Pi module
