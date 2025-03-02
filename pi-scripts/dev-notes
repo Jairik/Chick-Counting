@@ -1,0 +1,23 @@
+To Enable Camera:
+
+sudo raspi-config
+
+Go to: Interfacing Options -> Camera -> Enable
+
+sudo reboot
+
+take a test picture: raspistill -o test.jpg
+take a test video: raspivid -o test.h262 5000
+
+
+To Enable SSH:
+sudo raspi-congig
+
+Go to : Interface Options -> SSH -> Enable
+
+sudo reboot
+
+To connect via another computer:
+
+Raspberry Pi IP: <here>
+ssh pi@<IP ADDRESS>
