@@ -6,6 +6,10 @@ This file will contain all counting models that use clustering.
 #NOTE all clustering models are required to have identical class functionality
 #contain exact parameterizing for identical function names
 
+
+
+
+
 class kmeans():
     '''
     NOTE DEV INFO HERE END#NOTE
@@ -26,7 +30,7 @@ class kmeans():
 
 class complete_linkage():
     '''
-    NOTE this is the maximum distance clustering
+    NOTE This has time complexity O(N^2), will push to a later option
     '''
     def __init__():
         return
@@ -37,7 +41,7 @@ class complete_linkage():
 
 class single_linkage():
     '''
-    info here
+    NOTE This has time complexity O(N^2), will push to a later option
     '''
     def __init__():
         return

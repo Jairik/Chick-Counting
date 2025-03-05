@@ -17,3 +17,34 @@
 -  7) Utilities file, for general functionality and misc functionality usage across all files.
 -  8) Frontend and Hardware continuity file, for connection of all backend application to all frontend or hardware.
 -  9) End-to-end file. This file may not be necessary, but will contain functionality compiling different sections of functionality for user continuity and file 8 usage.
+
+## Considerations of 3/5/2025 week.
+- Identify fastest background subtraction methods.
+- Consider this processing pipeline:
+-   -   Redundant area subtraction
+-   -   Redundant color subtraction
+-   -   Color contrasting, SWAPPABLE WITH NEXT ITEM
+-   -   Color simplification
+- .
+- To minimize computation or minimize cluster detecting,
+- Consider lightweight tracking methods as detection substitution after 'easy-area' detection such as:
+-   -   optical flow
+-   -   simple centroid tracking
+- .
+- Discovering low computation detection methods:
+-   -   K-means - assuming we can bring in last frame detections as predicted count for next frame
+-   -   DBSCAN - pairwise distance calculation must be optimized if used
+-   -   complete and/or single linkage - must be heavily optimized if used, since time complexity is O(N^2)
+-   -   connected component labeling - O(N) complexity, look into this for sure
+-   -   contour detection - O(N) complexity, look into this for sure
+
+
+## for backend section of presentation of 3/5 week.
+-   show client's desired direction for the model and directions to take
+-   introduce YOLO
+-   show yolo + cole's attempts on chick videos
+-   show yolo attempt on fish video
+-   make illustration for how image detection + counter model works with code snippet
+-   introduce difficulties and the attempt to prepare a wide base for various approaches 
+-   -   counter mount, allowing capacity for shown examples of other model types
+-   go onto showing yolo training code and parameters if time excess

@@ -6,6 +6,21 @@ saving of constructed, augmented, modulated, or altered data for ease of collect
 		  data loading of training phase.
 '''
 
+def filter_frame(
+	image	:	any			=	None
+):
+	'''
+	### info: ###
+	This function is the image redundancy removal pipeline
+	'''
+
+	# NOTE EXAMPLE CODE END#NOTE _____________________________________
+	image = downscale(image)
+	image = remove_some_RGB(image)
+	image = group_some_RGB(image)
+	# NOTE END EXAMPLE CODE END#NOTE _________________________________
+	return image
+
 
 def remove_some_RGB(
 	image	:	any			=	None,

@@ -30,13 +30,24 @@ class Counter():
 
 			#if we are working with a YOLO based counter, make this class act as a mount
 			case 'YOLO':
-				yolo_implementation.YOLO_ObjectCounter(**counter_kwargs)
+				self._counter = yolo_implementation.YOLO_ObjectCounter(**counter_kwargs)
 
 			#if we are working with a custom clustering model, NOTE DEV HERE END#NOTE
 			case 'Clustering':
 				raise NotImplementedError(f'Counter type {counter_type} has not yet been implemented.')
 			
+		#this variable keeps the string variable of the type of counter, ex: YOLO
 		self._counter_type = counter_type
+
+		#this variable is a list of tuples, with each tuple being a coordinate of a center
+		self._detected_centers = []
+
+		#this variable is NOTE POSSIBLY TEMPORARY NOTE for tracking projection of centers
+		#this variable will be a tuple of projected X, Y offset for next frame
+		self._detected_projections = []
+
+		#this variable will be a dictionary (str:int) of detection classifications and totals over time
+		self._detected_totals = {}
 
 	#count function, is called on each frame
 	def count(
@@ -77,6 +88,38 @@ class Counter():
 	### NOTE NOTE property and setter class defintions will be placed below this line. END#NOTE END#NOTE ###
 	### ________________________________________________________________________________________________ ###
 
+	#detected centers
+
+	@property
+	def detected_centers(self):
+		return self._detected_centers
+
+	@detected_centers.setter
+	def detected_centers(self, new:any=None):
+		self._detected_centers = new
+
+	#detected projections
+
+	@property
+	def detected_projections(self):
+		return self._detected_projections
+
+	@detected_projections.setter
+	def detected_projections(self, new:any=None):
+		self._detected_projections = new
+
+	#detected totals
+
+	@property
+	def detected_totals(self):
+		return self._detected_totals
+
+	@detected_totals.setter
+	def detected_totals(self, new:any=None):
+		self._detected_totals = new
+
+	#counter type
+
 	@property
 	def counter_type(self):
 		return self._counter_type
@@ -84,6 +127,8 @@ class Counter():
 	@counter_type.setter
 	def counter(self, new:any=None):
 		self._counter_type = new
+
+	#counter, mounted
 
 	@property
 	def counter(self):
