@@ -1,10 +1,12 @@
-To Enable Camera:
-
-sudo raspi-config
-
-sudo reboot
-
 Pictures are taken using libcamera, with libcamera-jpeg -o test.jpg taking a picture
 
+(Check README)
 Raspberry Pi IP: <here>
 ssh pi@<IP ADDRESS>
+
+When attaching camera, ensure:
+- Pins are in correctly
+- Correct ports are enabled through raspi-config interface options
+- All dependencies are installed
+
+Update: Camera works now, yay!!!
