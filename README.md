@@ -3,3 +3,6 @@ Under contract with Salisbury University and Perdue Farms, we plan on developing
 
 [View Tentative System Design](./CC-Tentative-System-Design_2-4-25.pdf)
 
+Completing the project in a scrum-based environment, meeting as a team to plan 3-week sprints. Weekly client meeting with assigned tasks every week.
+For more information regarding this, check out our **product** and **sprint backlogs** in the projects tab.
+
