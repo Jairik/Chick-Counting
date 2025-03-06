@@ -40,11 +40,11 @@ class Counter():
 		self._counter_type = counter_type
 
 		#this variable is a list of tuples, with each tuple being a coordinate of a center
-		self._detected_centers = []
+		self._detected_object_centers = []
 
 		#this variable is NOTE POSSIBLY TEMPORARY NOTE for tracking projection of centers
 		#this variable will be a tuple of projected X, Y offset for next frame
-		self._detected_projections = []
+		self._detected_object_vectors = []
 
 		#this variable will be a dictionary (str:int) of detection classifications and totals over time
 		self._detected_totals = {}

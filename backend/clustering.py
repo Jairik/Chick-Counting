@@ -7,44 +7,60 @@ This file will contain all counting models that use clustering.
 #contain exact parameterizing for identical function names
 
 
+class temporal_crf():
+	'''
+	NOTE DEV INFO HERE END#NOTE
+	'''
+	def __init__(
+		dp_here
+	):
+		return
 
+class contour():
+	'''
+	NOTE DEV INFO HERE END#NOTE
+	'''
+	def __init__(
+		dev_params_here
+	):
+		return
 
 
 class kmeans():
-    '''
-    NOTE DEV INFO HERE END#NOTE
-    '''
-    def __init__(
-        dev_params_here
-    ):
-        return
-    
-    def count():
-        '''
-        NOTE DEV ensure this has any excess info generation that
-        may be desired for future model examination.
-        NOTE DEV then ensure that this is either enforced in code
-        FOR THE DEV or ensure that there is at least specs in the file header info box.
-        '''
-        return
+	'''
+	NOTE DEV INFO HERE END#NOTE
+	'''
+	def __init__(
+		dev_params_here
+	):
+		return
+	
+	def count():
+		'''
+		NOTE DEV ensure this has any excess info generation that
+		may be desired for future model examination.
+		NOTE DEV then ensure that this is either enforced in code
+		FOR THE DEV or ensure that there is at least specs in the file header info box.
+		'''
+		return
 
 class complete_linkage():
-    '''
-    NOTE This has time complexity O(N^2), will push to a later option
-    '''
-    def __init__():
-        return
+	'''
+	NOTE This has time complexity O(N^2), will push to a later option
+	'''
+	def __init__():
+		return
 
-    def count():
-        return
+	def count():
+		return
 
 
 class single_linkage():
-    '''
-    NOTE This has time complexity O(N^2), will push to a later option
-    '''
-    def __init__():
-        return
-    
-    def count():
-        return
+	'''
+	NOTE This has time complexity O(N^2), will push to a later option
+	'''
+	def __init__():
+		return
+	
+	def count():
+		return
