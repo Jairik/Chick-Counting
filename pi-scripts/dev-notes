@@ -1,5 +1,6 @@
 Pictures are taken using libcamera, with libcamera-jpeg -o test.jpg taking a picture
 
+To open taken .avi files, use xdg-open <filename>
 -----------------------------------------------------------------
 
 (Check README)
@@ -18,7 +19,7 @@ When attaching camera, ensure:
 In order to run any python scripts on the pi, a virtual environment must be set up:
 
 To setup a virtual environment to run the commands:
-python3 -m venv venv
+python3 -m venv venv  !ONLY IF CREATING NEW ONE!
 source venv/bin/activate
 echo "include-system-site-packages = true" >> venv/pyvenv.cfg
 pip install -r requirements.txt

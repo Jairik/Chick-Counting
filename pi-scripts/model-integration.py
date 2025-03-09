@@ -24,7 +24,7 @@ picam2.start()
 print("Camera Initialized")
 
 # Defining video output file name
-OUTPUT_FILE_NAME = "output-test.avi"
+OUTPUT_FILE_NAME = "bad-output-test.avi"
 
 # Defining video output properties (should match input)
 w, h, fps = 1920, 1080, 30
