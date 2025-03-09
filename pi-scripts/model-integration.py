@@ -4,11 +4,16 @@
 import ultralytics
 ultralytics.checks()
 
+# Testing libcamera dependency
+import libcamera
+# help(libcamera)  # Display message if installed properly
+
 # Input Capture Methods Input
 from libcamera import controls
 from picamera2 import Picamera2
 from ultralytics import solutions
-from solutions import ObjectCounter
+from ultralytics.solutions import ObjectCounter
+import cv2
 
 # Initialize & start libcamera
 picam2 = Picamera2()
@@ -20,10 +25,6 @@ print("Camera Initialized")
 
 # Defining video output file name
 OUTPUT_FILE_NAME = "output-test.avi"
-
-# Open the video file
-cap = cv2.VideoCapture("data/fishies.mp4")
-assert cap.isOpened(), "Error reading video file"
 
 # Defining video output properties (should match input)
 w, h, fps = 1920, 1080, 30
@@ -53,7 +54,7 @@ while True:  # Conditional can be modified once more capturing details are known
     frame = picam2.capture_array()
     
     # Convert from RGB to BRG (opencv format)
-    frame_bgr = cv2.cvtColor(frame, cvs.COLOR_RGB2BGR)
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     
     # Use the Object Counter to count objects in the frame and get the annotated image
     processed_frame = counter.count(frame_bgr)

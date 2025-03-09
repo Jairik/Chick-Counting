@@ -1,12 +1,32 @@
 Pictures are taken using libcamera, with libcamera-jpeg -o test.jpg taking a picture
 
+-----------------------------------------------------------------
+
 (Check README)
 Raspberry Pi IP: <here>
 ssh pi@<IP ADDRESS>
+
+-----------------------------------------------------------------
 
 When attaching camera, ensure:
 - Pins are in correctly
 - Correct ports are enabled through raspi-config interface options
 - All dependencies are installed
 
-Update: Camera works now, yay!!!
+-----------------------------------------------------------------
+
+In order to run any python scripts on the pi, a virtual environment must be set up:
+
+To setup a virtual environment to run the commands:
+python3 -m venv venv
+source venv/bin/activate
+echo "include-system-site-packages = true" >> venv/pyvenv.cfg
+pip install -r requirements.txt
+
+The echo statement ensures that the venv can access system-wide packages, such as libcamera
+
+It is important to update requirements.txt with only what dependencies are needed, in order to minimize OS bloating and ensure faast performance on the pi (which, at this point of the project, is essential)
+
+-----------------------------------------------------------------
+
+- Last Updated 3/9/25 ~2:00pm 
