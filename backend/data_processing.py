@@ -6,6 +6,23 @@ saving of constructed, augmented, modulated, or altered data for ease of collect
 		  data loading of training phase.
 '''
 
+'''
+	WHITEBOARD COLORS
+
+			R		G		B
+BELT		<100	<180	<230
+EGGSHELL	>230	>240	>240
+
+CHICKS		>200	>200	>150
+			152		140		92
+			110		93		37
+			
+'''
+
+import numpy as np
+import cv2
+
+
 def filter_frame(
 	image	:	any			=	None
 ):
@@ -24,9 +41,9 @@ def filter_frame(
 
 def remove_some_RGB(
 	image	:	any			=	None,
-	red		:	float|int	=	0,
-    green	:	float|int	=	0,
-    blue	:	float|int	=	0
+	red		:	tuple		=	0,
+    green	:	tuple		=	0,
+    blue	:	tuple		=	0
 ):
 	'''
 	#### NOTE TEMP dev notes: ####
@@ -42,7 +59,33 @@ def remove_some_RGB(
 	### returns: ###
 	This function will return the image with removed pixels
 	'''
-	assert image, "the function remove_some_RGB was called on image of type NONETYPE."
+	#assert image, "the function remove_some_RGB was called on image of type NONETYPE."
+
+	if(type(red) == float):
+		red *= 255
+	if(type(green) == float):
+		green *= 255
+	if(type(blue) == float):
+		blue *= 255
+
+	#make a mask for the desired colors
+	if(red != 0):
+		mask = image[:, :, 2] >= red[1]
+		mask = image[:, :, 2] <= red[0]
+	if(green != 0):
+		mask = image[:, :, 1] >= green
+	if(blue != 0):
+		mask = image[:, :, 0] >= blue
+
+	filtered_image = np.zeros_like(image)
+	filtered_image[mask] = image[mask]
+
+	#cv2.imwrite('new_img.jpg', filtered_image)
+	#cv2.imshow('f img', filtered_image)
+	#cv2.waitkey(0)
+	#cv2.destroyAllWindows()
+
+	return filtered_image
 
 
 def group_some_RGB(
