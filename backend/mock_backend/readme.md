@@ -1,2 +1,2 @@
 ## Ball Model Backend
-This is a backend draft for the ball model. It will contain
+This is a backend draft for the ball models. It will contain
