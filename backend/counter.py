@@ -6,6 +6,7 @@ from typing import Literal
 import joblib
 import yolo_implementation
 import clustering
+import data_processing as proc
 
 #counter class, acts as a mount for yolo or custom models
 class Counter():
@@ -17,11 +18,15 @@ class Counter():
 	-	-	Type of clustering model that will be used.
 	-	counter-kwargs:
 	-	-	Dict variable containing all parameters and values for the counter.
+	-	image_pipeline:
+	-	-	A collection of instructions on how to preprocess the data before counting.
+
 	'''
 	def __init__(
 		self,
 		counter_type	:	Literal['YOLO','Clustering']	=	None,
-		counter_kwargs	:	dict							=	{}
+		counter_kwargs	:	dict							=	{},
+		image_pipeline	:	list							=	[]
 	):
 		assert (counter_type != None), "Counter_type not defined for class 'Counter'. Please select a valid option."
 
@@ -49,6 +54,23 @@ class Counter():
 		#this variable will be a dictionary (str:int) of detection classifications and totals over time
 		self._detected_totals = {}
 
+		#collect boolean info based off of pipeline brought in
+		self._using_preprocess_pipeline = False if(len(image_pipeline) == 0) else True
+
+		#now we win define a functional pipeline for image simplification
+		#the pipeline will be in class-local saved variable from initiation
+		#this will be a list of dicts
+		#the list represents each transformation in the pipeline
+		#each item is a dict, with kv pair being function name and dict of parameters
+		#each parameter dict pair will be in standard form of param_name:param_val
+		self._preprocess_pipeline = image_pipeline
+
+		#NOTE now we are going to validate the pipeline brought in END#NOTE
+		
+
+		
+		
+
 	#count function, is called on each frame
 	def count(
 		self,
@@ -56,8 +78,38 @@ class Counter():
 	):
 		'''This function will be used to execute the model on the given frame with given parameters'''
 
+		'''NOTE BEGIN DEV NOTE BEGIN DEV NOTE
+		Consider the use of parallelism in image pipeline processing.
+		the RBPi will have 4 cores, and a Logan suggested library for this 
+		computational parallelism would be
+		import concurrent.futures 
+		make numpy array of images
+		with concurrent.futures.ThreadPoolExecutor() as Executor:
+			processed_images = list(executor.map(process_img_func, images))
+		also consider use of cv2.cuda library
+		NOTE END DEV NOTE END DEV NOTE'''
+
+		#until then... (regarding dev note above)
+		#run the provided image through a processing pipeline per user request
+		if(self._using_preprocess_pipeline):
+			processed_image = self.pipeline(image)
+
 		#all mounted counters should operate without fault, as they all contain count functionality
-		self._counter.count(image)
+		self._counter.count(processed_image)
+
+	def pipeline(
+		image	:	any
+	):
+		'''
+		### info: ###
+		This function takes in a given image, and runs it through a pipeline of transformations requested.
+		'''
+
+		#first check and make sure 
+
+		
+
+
 
 		
 	#save model for storing a preferred counter
@@ -87,6 +139,23 @@ class Counter():
 	###					Here is the end of class function and operational development.					 ###
 	### NOTE NOTE property and setter class defintions will be placed below this line. END#NOTE END#NOTE ###
 	### ________________________________________________________________________________________________ ###
+
+	#pipeline variables
+	@property
+	def preprocess_pipeline(self):
+		return NotImplementedError(f"make function that prints out pipeline functionality all pretty.")
+	
+	@preprocess_pipeline.setter
+	def preprocess_pipeline(self, new:list):
+		self._preprocess_pipeline = new
+
+	@property
+	def using_preprocess_pipeline(self):
+		return self.__using_preprocess_pipeline
+	
+	@using_preprocess_pipeline.setter
+	def using_preprocess_pipeline(self, new:bool):
+		self._using_preprocess_pipeline = new
 
 	#detected centers
 
