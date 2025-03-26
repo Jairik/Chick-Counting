@@ -4,9 +4,6 @@
 import ultralytics
 ultralytics.checks()
 
-# Testing libcamera dependency
-import libcamera
-
 # Input Capture Methods Input
 from libcamera import controls
 from picamera2 import Picamera2
@@ -17,16 +14,16 @@ import time
 
 # Initialize & start libcamera
 picam2 = Picamera2()
-config = picam2.create_preview_configuration(main={"size": (1920, 1080), "format":"RGB888"})
+config = picam2.create_preview_configuration(main={"size": (1280, 720), "format":"RGB888"})
 picam2.configure(config)
 picam2.start()
 
 # Allowing camera time to warm up (Can be tested without later)
-time.sleep(2)
+#time.sleep(2)
 print("Camera Initialized")
 
 # Defining video output file properties (name, dimensions, fps)
-OUTPUT_FILE_NAME = "bad-output-test.mp4"  # Save as MP4 for ease
+OUTPUT_FILE_NAME = "output-test.mp4"  # Save as MP4 for ease
 w, h, fps = 1280, 720, 30  # Swapping to 720p due to camera limitations
 
 # Define points for a line or region of interest in the video frame
@@ -42,7 +39,7 @@ print("Video Writer Initialized\nTo exit out of loop, press q")
 counter = solutions.ObjectCounter(
     show=True,  							# Display the image during processing
     region=line_points,  					# Region of interest points
-    model="models/yolo11n.pt",  			# Ultralytics YOLO11 model file
+    model="models/yolo11nano.pt",  			# Ultralytics YOLO11 model file
     line_width=2,  							# Thickness of the lines and bounding boxes
 )
 
@@ -60,13 +57,14 @@ try:
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         
         # Use the Object Counter to count objects in the frame and get the annotated image
-        processed_frame = counter.count(frame_bgr)
+        processed_frame = counter(frame_bgr)
+        print("[DEBUGGING] result attributes:", dir(processed_frame))
 
         # Write the annotated frame to the output video
-        video_writer.write(processed_frame)
+        video_writer.write(processed_frame.plot_im)
         
         # Display the frame
-        cv2.imshow("Object Detection", processed_frame)
+        cv2.imshow("Object Detection", processed_frame.plot_im)
         # Exit on the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
