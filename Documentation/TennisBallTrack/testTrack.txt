@@ -1,0 +1,21 @@
+L x W x H
+in inches
+Section 1:
+1x Base Board: 32" x 24"
+2x front legs: 2" x 4" x 14"
+2x back legs: 2" x 4" x 16"
+2x side walls: 1" x 4" x 16"
+
+Section 2:
+1x Base Board: 32" x 24"
+2x front legs: 2" x 4" x 11"
+2x back legs: 2" x 4" x 13"
+2x side walls: 1" x 4" x 16"
+2x Lane dividers: 1" x 4" x 24"
+
+Section 3:
+1x Base Board: 32" x 24"
+2x front legs: 2" x 4" x 7.5"
+2x back legs: 2" x 4" x 8.5"
+2x side walls: 1" x 4" x 16"
+4x Lane dividers: 1" x 4" x 24"
