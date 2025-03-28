@@ -6,7 +6,8 @@ from typing import Literal
 import joblib
 import yolo_implementation
 import clustering
-import data_processing as proc
+import inspect
+from data_processing import *
 
 #counter class, acts as a mount for yolo or custom models
 class Counter():
@@ -66,9 +67,36 @@ class Counter():
 		self._preprocess_pipeline = image_pipeline
 
 		#NOTE now we are going to validate the pipeline brought in END#NOTE
-		
 
-		
+		if(len(image_pipeline)>0):
+			
+			is_legal = True
+
+			#list collection of function names
+			func_names = []
+
+			#check each function info set
+			for f_i, func in enumerate(image_pipeline):
+
+				#provided function name should be callable
+				if(not callable(str(func.key()))):
+					is_legal = False
+					break
+
+				#now check each parameter set for each function
+				sig = inspect.signature(func.key())
+
+				#use try except on bind to ensure this works
+				try:
+					sig.bind(**func.values())
+				except Exception as e:
+					raise ValueError(f"Pipeline function #{f_i+1} '{str(func.key())}'. Parameters cannot bind to function.")
+
+			#check if function loop has been broken
+			if(not is_legal):
+				raise ValueError(f"Pipeline function #{f_i+1} '{str(func.key())}' is not callable.")
+			
+		#NOTE if here is successful, pipeline is logically working on has no contents END#NOTE
 		
 
 	#count function, is called on each frame
@@ -98,6 +126,7 @@ class Counter():
 		self._counter.count(processed_image)
 
 	def pipeline(
+		self,
 		image	:	any
 	):
 		'''
@@ -105,11 +134,23 @@ class Counter():
 		This function takes in a given image, and runs it through a pipeline of transformations requested.
 		'''
 
-		#first check and make sure 
+		#for each function in the pipeline, extract function name and parameters
+		for transformer_name, transformer_params in self._preprocess_pipeline:
 
-		
+			#get the function from the global namespace
+			transformer_func = globals().get(transformer_name)
 
+			#ensure that an illegal function name did not bypass initial test
+			if(not callable(transformer_func)):
+				raise KeyError(f"Function is not callable {str(transformer_name)}")
 
+			#apply transformation function and provided parameters to image
+			image = transformer_func(**transformer_params)
+
+			#and go again
+
+		#return image after all transforming functions have been applied.
+		return image
 
 		
 	#save model for storing a preferred counter
