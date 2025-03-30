@@ -192,10 +192,9 @@ spi.device.lsbfirst = False   # seems to be a read-only value;
 # not a bus property. We therefore leave the CS to a GPIO handling.
 # Note that on the uHat board that we have with MI48 and Bobcat,
 # the CS is on GPIO-7 (J8 connector Pin 26).
-spi.device.cshigh = True
-spi.device.no_cs = True
-mi48_spi_cs_n = DigitalOutputDevice("BCM7", active_high=False,
-                                    initial_value=False)
+#spi.device.cshigh = True
+#spi.device.no_cs = True
+mi48_spi_cs_n = DigitalOutputDevice("BCM17", active_high=False, initial_value=False)
 
 
 # ===============================
