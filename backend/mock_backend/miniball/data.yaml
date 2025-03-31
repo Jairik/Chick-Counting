@@ -1,0 +1,12 @@
+train: dataset/images/train
+val: dataset/images/val
+
+nc: 1
+names: ['ball']
+
+roboflow:
+  workspace: the-workspace-tvx9r
+  project: chick-counting-mock-environment-1
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/the-workspace-tvx9r/chick-counting-mock-environment-1/dataset/1
