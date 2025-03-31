@@ -1,1 +1,1 @@
-Placeholder readme file to create directories for mini ball testing.
+Training images extracted from mini ball testing videos are in this directory.
