@@ -192,7 +192,7 @@ class Counter():
 
 	@property
 	def using_preprocess_pipeline(self):
-		return self.__using_preprocess_pipeline
+		return self._using_preprocess_pipeline
 	
 	@using_preprocess_pipeline.setter
 	def using_preprocess_pipeline(self, new:bool):
