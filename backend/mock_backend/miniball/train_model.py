@@ -5,7 +5,7 @@ model = YOLO('yolo11n.pt')
 
 # trains model with miniball dataset
 model.train(
-    data='dataset/data.yaml',
+    data='data.yaml',
     epochs=100,
     imgsz=640
 )
