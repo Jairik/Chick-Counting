@@ -21,7 +21,7 @@ class contour():
 
 	def count(
 		image	:	any,
-		color_order	:	Literal['rgb','grb','therm']
+		color_order	:	Literal['rgb','grb','therm']	=	'rgb'
 	):
 		match(color_order):
 			case 'rgb':
