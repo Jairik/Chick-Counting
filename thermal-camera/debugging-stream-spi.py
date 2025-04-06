@@ -235,8 +235,8 @@ class MI48_reset:
 # ==============================
 # Create an MI48 interface object
 # ==============================
-mi48 = MI48([i2c, spi], data_ready=mi48_data_ready,
-            reset_handler=MI48_reset(pin=mi48_reset_n))
+i2c = I2C_Interface(SMBus(1), 0x40)
+mi48 = MI48([i2c, spi], data_ready=mi48_data_ready, reset_handler=MI48_reset(pin=mi48_reset_n), spi_only=False)
 
 # print out camera info
 camera_info = mi48.get_camera_info()

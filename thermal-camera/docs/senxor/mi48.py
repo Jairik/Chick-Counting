@@ -325,15 +325,17 @@ class MI48:
             regname = f'0x{reg:02X}'
         return self.interfaces[0].regread(reg, regname)
 
-    def regwrite(self, reg, value):
+    def regwrite(self, reg, value, regname=""):
         """Write to a control register"""
+        '''
         if isinstance(reg, str):
             regname = reg
             reg = regmap[regname]
         else:
             regname = ""
         return self.interfaces[0].regwrite(reg, value, regname)
-
+        '''
+        return self.i2c.regwrite(reg, value, regname)
 
     def read(self):
         """Read a data frame
