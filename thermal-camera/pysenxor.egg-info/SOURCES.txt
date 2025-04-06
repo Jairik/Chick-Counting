@@ -1,0 +1,11 @@
+setup.py
+./senxor/__init__.py
+./senxor/interfaces.py
+./senxor/mi48.py
+./senxor/plots.py
+./senxor/utils.py
+pysenxor.egg-info/PKG-INFO
+pysenxor.egg-info/SOURCES.txt
+pysenxor.egg-info/dependency_links.txt
+pysenxor.egg-info/requires.txt
+pysenxor.egg-info/top_level.txt

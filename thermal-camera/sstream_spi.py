@@ -7,7 +7,6 @@ from smbus import SMBus
 from spidev import SpiDev
 import argparse
 
-# Attempting to load initial gpiozero dependencies
 try:
     from gpiozero import Pin, DigitalInputDevice, DigitalOutputDevice
 except:
@@ -42,7 +41,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-# Determining filename (current time)
+
 def get_filename(tag, ext=None):
     """Yield a timestamped filename with specified tag."""
     ts = time.strftime('%Y%m%d-%H%M%S', time.localtime())
@@ -114,7 +113,7 @@ RPI_GPIO_SPI_BUS = 0
 
 # MI48A CS is routed to CE1 of the RPI on the uHAT development board
 # adapt that value according to your setup
-RPI_GPIO_SPI_CE_MI48 = 1
+RPI_GPIO_SPI_CE_MI48 = 0
 
 # =======================
 # MI48 I2C Address:
@@ -128,14 +127,13 @@ MI48_I2C_ADDRESS = 0x40
 # =======================
 # MI48 SPI Stuff:
 # =======================
-mi48_reset = DigitalOutputDevice("BCM17", active_high=False, initial_value=True) # Resetting prior to configuration
 MI48_SPI_MODE = 0b00
 MI48_SPI_BITS_PER_WORD = 8   # cannot be handled with /dev/spidev-x.y and python on RPi 3B+; must work with default 8
 MI48_SPI_LSBFIRST = False    # this appears to be a read-only on RPi
 MI48_SPI_CSHIGH = True
 # MI48_SPI_MAX_SPEED_HZ = 7800000
-MI48_SPI_MAX_SPEED_HZ = 15600000
-# MI48_SPI_MAX_SPEED_HZ = 31200000
+# MI48_SPI_MAX_SPEED_HZ = 15600000
+MI48_SPI_MAX_SPEED_HZ = 31200000
 MI48_SPI_CS_DELAY = 0.0001   # delay between asserting/deasserting CS_N and initiating/stopping clock/data
 
 
@@ -180,7 +178,7 @@ i2c = I2C_Interface(SMBus(RPI_GPIO_I2C_CHANNEL), MI48_I2C_ADDRESS)
 # Preferred way may be with the initialisation of the spi object.
 # We chose 160 bytes which corresponds to 1 row on MI08xx
 SPI_XFER_SIZE_BYTES = 160  # bytes
-spi = SPI_Interface(SpiDev(0,0), # Manually entering setting path for debugging purposes 
+spi = SPI_Interface(SpiDev(RPI_GPIO_SPI_BUS, RPI_GPIO_SPI_CE_MI48),
                     xfer_size=SPI_XFER_SIZE_BYTES)
 
 spi.device.mode = MI48_SPI_MODE
@@ -196,7 +194,7 @@ spi.device.lsbfirst = False   # seems to be a read-only value;
 # the CS is on GPIO-7 (J8 connector Pin 26).
 #spi.device.cshigh = True
 #spi.device.no_cs = True
-mi48_spi_cs_n = DigitalOutputDevice("BCM17", active_high=False, initial_value=False) 
+mi48_spi_cs_n = DigitalOutputDevice("BCM17", active_high=False, initial_value=False)
 
 
 # ===============================
@@ -214,12 +212,6 @@ mi48_spi_cs_n = DigitalOutputDevice("BCM17", active_high=False, initial_value=Fa
 use_data_ready_pin = True
 if use_data_ready_pin:
     mi48_data_ready = DigitalInputDevice("BCM24", pull_up=False)
-
-# Resetting MI84 after small delay
-# mi48_reset.on()  # Triggering reset
-# time.sleep(50)
-# mi48_reset.off()  # Reset complete
-# time.sleep(1)  # Wait for sensor to boot up
 
 # connect the reset line to allow to drive it by SW (GPIO23, J8:16)
 mi48_reset_n = DigitalOutputDevice("BCM23", active_high=False,
@@ -330,7 +322,6 @@ while True:
 
 # stop capture and quit
 mi48.stop(stop_timeout=0.5)
-mi48_spi_cs_n.close()  # Close all SPI connections
 try:
     fd_data.close()
 except NameError:
