@@ -7,6 +7,7 @@ from smbus import SMBus
 from spidev import SpiDev
 import argparse
 
+# Attempting to load initial gpiozero dependencies
 try:
     from gpiozero import Pin, DigitalInputDevice, DigitalOutputDevice
 except:
@@ -14,6 +15,14 @@ except:
     print("Please install the 'gpiozero' library to monitor "
           "the MI48 DATA_READY pin. For example, by:")
     print("pip3 install gpiozero")
+    sys.exit()
+
+# Attempting to load gpiozero dependency NativeFactory for pin reset
+try: 
+    from gpiozero import NativeFactory
+except:
+    import sys
+    print("gpiozero NativeFactory not found")
     sys.exit()
 
 import time
@@ -41,7 +50,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
+# Determining filename (current time)
 def get_filename(tag, ext=None):
     """Yield a timestamped filename with specified tag."""
     ts = time.strftime('%Y%m%d-%H%M%S', time.localtime())
@@ -111,6 +120,9 @@ RPI_GPIO_I2C_CHANNEL = 1
 # /dev/spidev0.0  /dev/spidev0.1
 RPI_GPIO_SPI_BUS = 0
 
+# Resetting GPIO resources before re-running the script
+Device.pin_factory = NativeFactory()
+
 # MI48A CS is routed to CE1 of the RPI on the uHAT development board
 # adapt that value according to your setup
 RPI_GPIO_SPI_CE_MI48 = 1
@@ -127,6 +139,7 @@ MI48_I2C_ADDRESS = 0x40
 # =======================
 # MI48 SPI Stuff:
 # =======================
+mi48_reset = DigitalOutputDevice("BCM17", active_high=False, initial_value=True) # Resetting prior to configuration
 MI48_SPI_MODE = 0b00
 MI48_SPI_BITS_PER_WORD = 8   # cannot be handled with /dev/spidev-x.y and python on RPi 3B+; must work with default 8
 MI48_SPI_LSBFIRST = False    # this appears to be a read-only on RPi
@@ -178,7 +191,7 @@ i2c = I2C_Interface(SMBus(RPI_GPIO_I2C_CHANNEL), MI48_I2C_ADDRESS)
 # Preferred way may be with the initialisation of the spi object.
 # We chose 160 bytes which corresponds to 1 row on MI08xx
 SPI_XFER_SIZE_BYTES = 160  # bytes
-spi = SPI_Interface(SpiDev(RPI_GPIO_SPI_BUS, RPI_GPIO_SPI_CE_MI48),
+spi = SPI_Interface(SpiDev(0,0), # Manually entering setting path for debugging purposes 
                     xfer_size=SPI_XFER_SIZE_BYTES)
 
 spi.device.mode = MI48_SPI_MODE
@@ -194,7 +207,7 @@ spi.device.lsbfirst = False   # seems to be a read-only value;
 # the CS is on GPIO-7 (J8 connector Pin 26).
 #spi.device.cshigh = True
 #spi.device.no_cs = True
-mi48_spi_cs_n = DigitalOutputDevice("BCM17", active_high=False, initial_value=False)
+mi48_spi_cs_n = DigitalOutputDevice("BCM18", active_high=False, initial_value=False) # Trying pin 18
 
 
 # ===============================
