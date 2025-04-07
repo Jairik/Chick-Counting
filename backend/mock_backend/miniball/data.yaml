@@ -1,5 +1,5 @@
-train: dataset/images/train
-val: dataset/images/val
+train: C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/backend/mock_backend/miniball/dataset/images/train
+val: C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/backend/mock_backend/miniball/dataset/images/val
 
 nc: 1
 names: ['ball']

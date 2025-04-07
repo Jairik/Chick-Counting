@@ -5,8 +5,8 @@ import cv2
 import os
 
 
-video_file = "" # may be scaled up to use live video footage from raspberry pi
-output_folder = "" # directory for images to be saved to
+video_file = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/IMG_3222.MOV" # may be scaled up to use live video footage from raspberry pi
+output_folder = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/Demo_Extracting" # directory for images to be saved to
 frame_interval = 20 # so were not saving every single frame
 assert os.path.exists(video_file), "error: video file not found"
 os.makedirs(output_folder, exist_ok=True)
