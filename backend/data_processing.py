@@ -23,6 +23,24 @@ import numpy as np
 import cv2
 
 
+def mask_red_thresh(frame, red_threshold=127):
+    # Copy the frame to avoid modifying original
+    masked = frame.copy()
+
+    # Red channel is channel 2 in BGR
+    red_channel = masked[:, :, 2]
+
+    # Create a mask where red > threshold
+    red_mask = red_channel > red_threshold
+
+    # Expand mask to 3 channels (for BGR)
+    full_mask = np.stack([red_mask]*3, axis=-1)
+
+    # Set all pixels where red <= threshold to black
+    masked[~full_mask] = 0
+
+    return masked
+
 def filter_frame(
 	image	:	any			=	None
 ):

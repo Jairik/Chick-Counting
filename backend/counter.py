@@ -79,7 +79,7 @@ class Counter():
 			for f_i, func in enumerate(image_pipeline):
 
 				#provided function name should be callable
-				if(not callable(str(func.key()))):
+				if(not callable(str(next(iter(func))))):
 					is_legal = False
 					break
 
@@ -90,11 +90,11 @@ class Counter():
 				try:
 					sig.bind(**func.values())
 				except Exception as e:
-					raise ValueError(f"Pipeline function #{f_i+1} '{str(func.key())}'. Parameters cannot bind to function.")
+					raise ValueError(f"Pipeline function #{f_i+1} '{str(next(iter(func)))}'. Parameters cannot bind to function.")
 
 			#check if function loop has been broken
 			if(not is_legal):
-				raise ValueError(f"Pipeline function #{f_i+1} '{str(func.key())}' is not callable.")
+				raise ValueError(f"Pipeline function #{f_i+1} '{str(next(iter(func)))}' is not callable.")
 			
 		#NOTE if here is successful, pipeline is logically working on has no contents END#NOTE
 		
@@ -192,7 +192,7 @@ class Counter():
 
 	@property
 	def using_preprocess_pipeline(self):
-		return self.__using_preprocess_pipeline
+		return self._using_preprocess_pipeline
 	
 	@using_preprocess_pipeline.setter
 	def using_preprocess_pipeline(self, new:bool):

@@ -21,7 +21,7 @@ class contour():
 
 	def count(
 		image	:	any,
-		color_order	:	Literal['rgb','grb']
+		color_order	:	Literal['rgb','grb','therm']	=	'rgb'
 	):
 		match(color_order):
 			case 'rgb':
@@ -33,6 +33,11 @@ class contour():
 
 				#use cv2 built in function to convert the BGR format to grayscale
 				gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+			case 'therm':
+
+				#do something
+				pass
 
 		#grayscale is now comeplete
 		#now we need to binarize the image based off of pixel values
