@@ -78,17 +78,20 @@ class Counter():
 			#check each function info set
 			for f_i, func in enumerate(image_pipeline):
 
-				#provided function name should be callable
-				if(not callable(str(next(iter(func))))):
+				#get the function from the global namespace
+				transformer_func = globals().get(func)
+
+				#ensure that an illegal function name did not bypass initial test
+				if(not callable(transformer_func)):
 					is_legal = False
 					break
 
 				#now check each parameter set for each function
-				sig = inspect.signature(func.key())
+				sig = inspect.signature(transformer_func)
 
 				#use try except on bind to ensure this works
 				try:
-					sig.bind(**func.values())
+					sig.bind(**image_pipeline[func])
 				except Exception as e:
 					raise ValueError(f"Pipeline function #{f_i+1} '{str(next(iter(func)))}'. Parameters cannot bind to function.")
 
