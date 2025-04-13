@@ -36,7 +36,7 @@ logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--record', default=True, dest='record', action='store_true', help='Record data')
-    parser.add_argument('-thermalfps', '--thermalframerate', default=15, type=float, help='Desired Framerate for Thermal Camera', dest='fps')
+    parser.add_argument('-thermalfps', '--thermalframerate', default=15, type=float, help='Desired Framerate for Thermal Camera', dest='thermalframerate')
     parser.add_argument('-rgbfps', '--rgbframerate', default=30, type=float, help='Desired Framerate for RGB Camera', dest='fps')
     parser.add_argument('-rgbpreview', '--rgbvideopreview', default=False, type=bool, help='See a preview of the RGB Camera')
     parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=False, type=bool, help='See a preview of the Thermal Camera')
@@ -110,13 +110,15 @@ def close_all_interfaces():
         pass
     
 # Define a signal handler to ensure clean closer upon CTRL+C
+
 def signal_handler(sig, frame):
-    '''Ensure clean exit in case of SIGINT or SIGTERM'''
+    #Ensure clean exit in case of SIGINT or SIGTERM
     logger.info("Exiting due to SIGINT or SIGTERM")
-    mi48.stop(poll_timeout=0.25, stop_timeout=1.2)  # Close all connections from device
+    mi48.stop(poll_timeout=0.5, stop_timeout=1.2)  # Close all connections from device
     time.sleep(0.5)
     logger.info("Done")
-    sys.exit(0)  # Exit with success
+    sys.exit(0)  # Exit with success'
+
 
 # Define the signals that should be handled to ensure clean exit
 signal.signal(signal.SIGINT, signal_handler)
@@ -203,24 +205,46 @@ if not camera_info:
 # Proceed with camera initialization
 picam2 = Picamera2()
 picam2.start()
-print("Camera Initialized")
+print("RGB Camera Initialized")
 w, h, fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
 
-thermal_signal_var = -1  # Setting as signal value
-tw, th = 640, 480  # Setting thermal camera dimensions default values
+tw, th = 62, 80  # Setting thermal camera dimensions (known)
 
 # Defining a video writer for rgb & thermal cameras (to save video to file)
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-rgb_filename = get_filename(tag='', cameraType="RGB")
-thermal_filename = get_filename(tag='', cameraType="Thermal")
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+rgb_filename = get_filename(tag='', cameraType="RGB") + ".mp4"
+thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
 rgb_output = cv2.VideoWriter(rgb_filename, fourcc, fps, (w, h))
 thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))  # Will get rewritten in the loop, if successful
+print("Video Writers Initialized")
+
+# Defining a global scope event
+stop_event = threading.Event()
+
+# Defining a signal handler so everything successfully exits on Ctrl+C
+def safe_exit_signal_handler(sig, frame):
+    logger.info("Exiting due to SIGINT or SIGTERM")
+    stop_event.set()  # Signal all threads to stop
+
+    time.sleep(0.5)  # Wait a small amount of time to threads to finish loops
+
+    try:
+        mi48.stop(poll_timeout=0.5, stop_timeout=1.2)
+    except Exception as e:
+        logger.error(f"Error stopping MI48: {e}")
+
+    logger.info("Signal Handler is done")
+    # Now, we  let main safely exit itself
+
+# Registering the signal handlers
+signal.signal(signal.SIGINT, safe_exit_signal_handler)
+signal.signal(signal.SIGTERM, safe_exit_signal_handler)
 
 ''' RGB Camera Loop to capture video '''
-def capture_rgb(name):
+def capture_rgb():
     try:
-        while True:
+        while not stop_event.is_set():
             # Capture the frame
             frame = picam2.capture_array()
             # Write the frame to the video file
@@ -235,22 +259,23 @@ def capture_rgb(name):
     except KeyboardInterrupt:
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         print(f"RGB video capture stopped at {cur_time}")
-
-
-
+    finally:
+        rgb_output.release()
+        print("RGB Camera video writer has been released")
 
 ''' Thermal Camera Loop to capture video & collect data '''
 # args.thermalcamerapreview
-def capture_thermal(name):
+def capture_thermal():
     try:
-        while True:
+        while not stop_event.is_set():
             if hasattr(mi48, 'data_ready'):
                 mi48.data_ready.wait_for_active()
             else:
                 data_ready = False
-                while not data_ready:
+                while not data_ready and not stop_event.is_set():
                     time.sleep(0.005)
                     data_ready = mi48.get_status() & DATA_READY
+                if stop_event.is_set(): break  # Ensuring frequent check for signal
             # Read the frame
             mi48_spi_cs_n.on()
             # time.sleep(MI48_SPI_CS_DELAY)
@@ -277,18 +302,11 @@ def capture_thermal(name):
             img8u = cv.normalize(img.astype('uint8'), None, 255, 0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
             img8u = cv_filter(img8u, parameters={'blur_ks':3}, use_median=False, use_bilat=True, use_nlm=False)
             
-            if thermal_signal_var == -1:
-                th, tw = img8u.shape[:2]
-                thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))  # Setting the video writer
-                thermal_signal_var = 1  # Once video writer is set, turn off flag
-            
             if args.thermalcamerapreview:
                 cv_display(img8u)
                 key = cv.waitKey(1)  # & 0xFF
                 if key == ord("q"):
                     break
-                
-            # Write to a video output file
             thermal_colored_frame = cv.applyColorMap(img8u, cv.COLORMAP_JET)
             thermal_resized_frame = cv.resize(thermal_colored_frame, (tw, th))
             thermal_output.write(thermal_resized_frame)
@@ -296,6 +314,9 @@ def capture_thermal(name):
     except KeyboardInterrupt:
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         print(f"Thermal video capture stopped at {cur_time}")
+    finally:
+        thermal_output.release()
+        print("Thermal Camera Video Writer Released")
 
 ''' Creating threads to divide thermal camera and rgb camera '''
 rgb_thread = threading.Thread(target=capture_rgb)  # No args needed
@@ -305,11 +326,15 @@ thermal_thread = threading.Thread(target=capture_thermal)  # No args needed
 rgb_thread.start()
 thermal_thread.start()
 
-# Wait for both threads to finish 
+# Wait for both threads to finish cleanup
 rgb_thread.join()
 thermal_thread.join()
 
-''' Release resources once both threads are finished '''
+# Allow threads some more time to finish
+print("Sleeping for 2 seconds to allow threads to complete...")
+time.sleep(2)
+
+''' Release resources/additional cleanup once both threads are finished '''
 picam2.stop()
 rgb_output.release()
 thermal_output.release()
