@@ -25,10 +25,6 @@ picam2.configure(config)
 picam2.start()
 print("Camera Initialized")
 
-# Allowing camera time to warm up (Can be tested without later)
-#time.sleep(2)
-print("Camera Initialized")
-
 # Defining video output file properties (name, dimensions, fps)
 OUTPUT_FILE_NAME = "output-test.mp4"  # Save as MP4 for ease
 w, h, fps = 1280, 720, 30  # Swapping to 720p due to camera limitations
