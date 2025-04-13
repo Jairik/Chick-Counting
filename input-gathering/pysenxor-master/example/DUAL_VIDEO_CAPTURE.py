@@ -38,6 +38,8 @@ def parse_args():
     parser.add_argument('-r', '--record', default=True, dest='record', action='store_true', help='Record data')
     parser.add_argument('-thermalfps', '--thermalframerate', default=15, type=float, help='Desired Framerate for Thermal Camera', dest='fps')
     parser.add_argument('-rgbfps', '--rgbframerate', default=30, type=float, help='Desired Framerate for RGB Camera', dest='fps')
+    parser.add_argument('-rgbpreview', '--rgbvideopreview', default=False, type=bool, help='See a preview of the RGB Camera')
+    parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=False, type=bool, help='See a preview of the Thermal Camera')
     args = parser.parse_args()
     return args
 
@@ -48,7 +50,7 @@ print("Dependencies are initialized and set up...")
 # Defining helper functions
 def get_filename(tag, cameraType="thermal"):
     '''Yield a timestamp filename with a specified tag.'''
-    now = datetime
+    now = datetime.now()
     ts = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{now.microsecond // 1000:03d}'   
     filename = "{}-{}--{}".format(cameraType, tag, ts)
     return filename
@@ -205,18 +207,95 @@ print("Camera Initialized")
 w, h, fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
 
-# Defining a video writer (to save video to file)
+thermal_signal_var = -1  # Setting as signal value
+tw, th = 640, 480  # Setting thermal camera dimensions default values
+
+# Defining a video writer for rgb & thermal cameras (to save video to file)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 rgb_filename = get_filename(tag='', cameraType="RGB")
-output = cv2.VideoWriter(rgb_filename, fourcc, fps, (w, h))
+thermal_filename = get_filename(tag='', cameraType="Thermal")
+rgb_output = cv2.VideoWriter(rgb_filename, fourcc, fps, (w, h))
+thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))  # Will get rewritten in the loop, if successful
 
 ''' RGB Camera Loop to capture video '''
 def capture_rgb(name):
-    pass  # Logic Here
+    try:
+        while True:
+            # Capture the frame
+            frame = picam2.capture_array()
+            # Write the frame to the video file
+            rgb_output.write(frame)
+            
+            # If user chooses, show video output
+            if args.rgbvideopreview: cv2.imshow("Video", frame)
+            
+            # Break loop on pressing 'q'
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+    except KeyboardInterrupt:
+        cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
+        print(f"RGB video capture stopped at {cur_time}")
+
+
+
 
 ''' Thermal Camera Loop to capture video & collect data '''
+# args.thermalcamerapreview
 def capture_thermal(name):
-    pass  # Logic Here
+    try:
+        while True:
+            if hasattr(mi48, 'data_ready'):
+                mi48.data_ready.wait_for_active()
+            else:
+                data_ready = False
+                while not data_ready:
+                    time.sleep(0.005)
+                    data_ready = mi48.get_status() & DATA_READY
+            # Read the frame
+            mi48_spi_cs_n.on()
+            # time.sleep(MI48_SPI_CS_DELAY)
+            data, header = mi48.read()
+            if data is None:
+                logger.critical('NONE data received instead of GFRA')
+                mi48.stop(stop_timeout=1.0)
+                sys.exit(1)  # Exit with error
+            # delay a bit, then deassert spi_cs
+            time.sleep(MI48_SPI_CS_DELAY)
+            mi48_spi_cs_n.off()
+
+            if args.record:
+                write_frame(fd_data, data)
+
+            img = data_to_frame(data, mi48.fpa_shape)
+
+            if header is not None:
+                logger.debug('  '.join([format_header(header),
+                                        format_framestats(data)]))
+            else:
+                logger.debug(format_framestats(data))
+
+            img8u = cv.normalize(img.astype('uint8'), None, 255, 0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+            img8u = cv_filter(img8u, parameters={'blur_ks':3}, use_median=False, use_bilat=True, use_nlm=False)
+            
+            if thermal_signal_var == -1:
+                th, tw = img8u.shape[:2]
+                thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))  # Setting the video writer
+                thermal_signal_var = 1  # Once video writer is set, turn off flag
+            
+            if args.thermalcamerapreview:
+                cv_display(img8u)
+                key = cv.waitKey(1)  # & 0xFF
+                if key == ord("q"):
+                    break
+                
+            # Write to a video output file
+            thermal_colored_frame = cv.applyColorMap(img8u, cv.COLORMAP_JET)
+            thermal_resized_frame = cv.resize(thermal_colored_frame, (tw, th))
+            thermal_output.write(thermal_resized_frame)
+            
+    except KeyboardInterrupt:
+        cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
+        print(f"Thermal video capture stopped at {cur_time}")
 
 ''' Creating threads to divide thermal camera and rgb camera '''
 rgb_thread = threading.Thread(target=capture_rgb)  # No args needed
@@ -232,7 +311,8 @@ thermal_thread.join()
 
 ''' Release resources once both threads are finished '''
 picam2.stop()
-output.release()
+rgb_output.release()
+thermal_output.release()
 mi48.stop(stop_timeout=0.5)
 try:
     fd_data.close()
