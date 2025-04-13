@@ -12,11 +12,18 @@ from ultralytics.solutions import ObjectCounter
 import cv2
 import time
 
-# Initialize & start libcamera
+# Check avaialble camera info
+camera_info = Picamera2.global_camera_info()
+if not camera_info:
+    print("No cameras detected. Check camera connection and configuration")
+    exit(1)
+
+# Proceed with camera initialization
 picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (1280, 720), "format":"RGB888"})
 picam2.configure(config)
 picam2.start()
+print("Camera Initialized")
 
 # Allowing camera time to warm up (Can be tested without later)
 #time.sleep(2)
