@@ -1,33 +1,33 @@
 ''' This file aims to capture both the RGB and Thermal Camera video outputs at once, time stamping and saving to a common folder '''
 
+# Misc Libraries
+import logging
+import sys
+import os
+import signal  # For clean thread handling/synchronization
+import argparse  # Expandability
+import time
+from datetime import datetime  # Timestamps of filenames
+import threading  # For multithreading with RGB and Thermal Outputs
 # RGB Camera Libraries
 from libcamera import controls
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 import cv2
 # Thermal Camera Libraries
-import sys
 sys.path.append("/home/test/myenv/lib/python3.11/site-packages")
-import os
-import signal
 from smbus import SMBus
 from spidev import SpiDev
-import argparse  # Expandability
 try:
     from gpiozero import Pin, DigitalInputDevice, DigitalOutputDevice
 except:
-    print("ERROR- Must install gpiozero with pip3 install gpiozero")
+    logger.error("ERROR- Must install gpiozero with pip3 install gpiozero")
     sys.exit()
-import time
-from datetime import datetime
-import logging
 import numpy as np # Plotting thermal values into pictures
 import cv2 as cv
 from senxor.mi48 import MI48, DATA_READY, format_header, format_framestats
 from senxor.utils import data_to_frame, cv_filter
 from senxor.interfaces import SPI_Interface, I2C_Interface
-
-import threading  # For multithreading with RGB and Thermal Outputs
 
 # Configuring logger for debugging purposes
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-print("Dependencies are initialized and set up...")
+logger.debug("Dependencies are initialized and set up...")
 
 ''' Setting up & Calibrating the Thermal Camera '''
 
@@ -158,12 +158,12 @@ class MI48_reset:
         self.deassert_time = deassert_seconds
 
     def __call__(self):
-        print('Resetting the MI48...')
+        logger.info('Resetting the MI48...')
         self.pin.on()
         time.sleep(self.assert_time)
         self.pin.off()
         time.sleep(self.deassert_time)
-        print('Done.')
+        logger.debug('Done.')
 
 # Creating a MI48 Object
 mi48 = MI48([i2c, spi], data_ready=mi48_data_ready,
@@ -192,14 +192,14 @@ if args.record:
     
 # Starting the thermal camera
 mi48.start(stream=True, with_header=with_header)
-print("Thermal Camera is started")
+logger.info("Thermal Camera is started")
 
 ''' Setting up & calibrating the RGB Camera '''
 
 # Ensure that camera is available
 camera_info = Picamera2.global_camera_info()
 if not camera_info:
-    print("No cameras detected. Check camera connection and configuration")
+    logger.error("No cameras detected. Check camera connection and configuration")
     exit(1)
     
 # Proceed with camera initialization
@@ -211,7 +211,7 @@ rgb_config = picam2.create_video_configuration(
 picam2.configure(rgb_config)  # Forcing correct resolution
 picam2.start()
 encoder = H264Encoder(bitrate=10_000_000)
-print("RGB Camera Initialized")
+logger.info("RGB Camera Initialized")
 w, h, rgb_fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
 
@@ -255,7 +255,7 @@ def capture_rgb():
     except KeyboardInterrupt:
         picam2.stop_recording()
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
-        print(f"RGB video capture stopped at {cur_time}")
+        logger.info(f"RGB video capture stopped at {cur_time}")
 
 ''' Thermal Camera Loop to capture video & collect data '''
 def capture_thermal():
@@ -309,10 +309,10 @@ def capture_thermal():
             
     except KeyboardInterrupt:
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
-        print(f"Thermal video capture stopped at {cur_time}")
+        logger.info(f"Thermal video capture stopped at {cur_time}")
     finally:
         thermal_output.release()
-        print("Thermal Camera Video Writer Released")
+        logger.info("Thermal Camera Video Writer Released")  # Somewhat redundant
 
 ''' Creating threads to divide thermal camera and rgb camera '''
 rgb_thread = threading.Thread(target=capture_rgb)  # No args needed
@@ -331,11 +331,11 @@ rgb_thread.join()
 thermal_thread.join()
 
 # Allow threads some more time to finish
-print("Sleeping for a little to allow threads to complete...")
+logger.info("Sleeping for a little to allow threads to complete...")
 time.sleep(.5)
 
 ''' Release resources/additional cleanup once both threads are finished '''
-print("Releasing resources now...")
+logger.info("Releasing resources now...")
 picam2.stop()
 thermal_output.release()
 try:
