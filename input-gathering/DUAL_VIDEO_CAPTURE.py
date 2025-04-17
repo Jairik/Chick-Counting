@@ -2,7 +2,8 @@
 
 # RGB Camera Libraries
 from libcamera import controls
-from picamera2 import Picamera2 
+from picamera2 import Picamera2
+from picamera2.encoders import H264Encoder
 import cv2
 # Thermal Camera Libraries
 import sys
@@ -203,7 +204,13 @@ if not camera_info:
     
 # Proceed with camera initialization
 picam2 = Picamera2()
+rgb_config = picam2.create_video_configuration(
+    main={"size": (1920, 1080), "format": "RGB888"},
+    encode="main"  # Name of steam to encode
+)
+picam2.configure(rgb_config)  # Forcing correct resolution
 picam2.start()
+encoder = H264Encoder(bitrate=10_000_000)
 print("RGB Camera Initialized")
 w, h, rgb_fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
@@ -212,15 +219,20 @@ tw, th = 62, 80  # Setting thermal camera dimensions (known)
 
 # Defining a video writer for rgb & thermal cameras (to save video to file)
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-rgb_filename = get_filename(tag='', cameraType="RGB") + ".mp4"
+rgb_filename = get_filename(tag='', cameraType="RGB") + ".m264"
 thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
-#rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (w, h))
-thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))  # Will get rewritten in the loop, if successful
+# rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (w, h))
+thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
 # Defining RGB dimensions based off dynamic test
-initial_frame = picam2.capture_array()
-actual_h, actual_w = initial_frame.shape[:2]
-logger.debug(f"Captured frame dimensions: width={actual_w}, height={actual_h}")
-rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (actual_w, actual_w))  # Dynamically setting video writer with actual dimensions
+# initial_frame = picam2.capture_array()
+# actual_h, actual_w = initial_frame.shape[:2]
+# logger.debug(f"Captured frame dimensions for RGB Camera: width={actual_w}, height={actual_h}, expected: w={w}, h={h}")
+#rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (actual_w, actual_h))  # Dynamically setting video writer with actual dimensions
+# Ensuring that the video writers are successfully opened
+#if not rgb_output.isOpened():
+#    logger.error(f"Could not open RGB Writer (filename={rgb_filename})")
+#    sys.exit(1)
+
 print("Video Writers Initialized")
 
 # Defining a global scope event
@@ -248,31 +260,29 @@ signal.signal(signal.SIGTERM, safe_exit_signal_handler)
 ''' RGB Camera Loop to capture video '''
 def capture_rgb():
     try:
-        while not stop_event.is_set():
+ #       while not stop_event.is_set():
             # Capture the frame
-            frame = picam2.capture_array()
+#            frame = picam2.capture_array()
             
             # Display message if dimensions are off
-            if frame.shape[0] != h or frame.shape[1] != w:
-                logger.critical(f"RGB Camera dimensions are off (actual {h}, {w}, resizing")
-                actual_w, actual_h = frame.shape[1], frame.shape[0]
+#            if frame.shape[0] != h or frame.shape[1] != w:
+#                logger.critical(f"RGB Camera dimensions are off (actual {h}, {w}")
                 # sys.exit(10)  # Exit with exit code
 
             # Write the frame to the video file
-            rgb_output.write(frame)
+#            rgb_output.write(frame)
             
             # If user chooses, show video output
-            if args.rgbvideopreview: cv2.imshow("Video", frame)
+#            if args.rgbvideopreview: cv2.imshow("Video", frame)
             
             # Break loop on pressing 'q'
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+#            if cv2.waitKey(1) & 0xFF == ord('q'):
+#                break
+        picam2.start_recording(encoder, rgb_filename)
     except KeyboardInterrupt:
+        picam2.stop_recording()
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         print(f"RGB video capture stopped at {cur_time}")
-    finally:
-        rgb_output.release()
-        print("RGB Camera video writer has been released")
 
 ''' Thermal Camera Loop to capture video & collect data '''
 # args.thermalcamerapreview
@@ -342,10 +352,11 @@ rgb_thread.join()
 thermal_thread.join()
 
 # Allow threads some more time to finish
-print("Sleeping for 2 seconds to allow threads to complete...")
-time.sleep(2)
+print("Sleeping for a little to allow threads to complete...")
+time.sleep(.5)
 
 ''' Release resources/additional cleanup once both threads are finished '''
+print("Releasing resources now...")
 picam2.stop()
 rgb_output.release()
 thermal_output.release()
