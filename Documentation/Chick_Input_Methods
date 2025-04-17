@@ -1,7 +1,0 @@
-Camera Type(s): RGB, thermal
-Camera Placement: Infront of drop with dividers
-Number of cameras: 3 
-Specs: 2 RGB at 1080p resolution at 60 fps, 1 thermal 24 fps 80 x 62
-Where data is being sent: Raspberry Pi module
-
-Link to Pi Module: https://www.amazon.com/RasTech-Raspberry-Camera-Module-Sensor/dp/B0BLZ98RW1

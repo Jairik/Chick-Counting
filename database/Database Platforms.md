@@ -1,17 +1,18 @@
 # Database Platform Research
 
 ## What could our database choice potentially support?
-  -	image metadata
-    -	images generated from RGB and Raspberry Pi thermal cameras
-    -	AI detections from YOLO11
-  -	real-time processing
-    -	quick storage and retrieval of data (ex: number of chicks detected so far)
-  -	optimal scalability
-  -	accurate tracking and analysis
-    -	tracking and comparing AI detections to human counts
 
+- image metadata
+- images generated from RGB and Raspberry Pi thermal cameras
+- AI detections from YOLO11
+- real-time processing
+- quick storage and retrieval of data (ex: number of chicks detected so far)
+- optimal scalability
+- accurate tracking and analysis
+- tracking and comparing AI detections to human counts
 
 ## Database Comparisons
+
 | Database        | Strengths          | Weaknesses             |
 | --------------- | ------------------ | ---------------------- |
 | PostGreSQL      | Optimal ACID compliance, can define custom data types and plugins | More complex for configurations, more learning required
@@ -21,6 +22,7 @@
 | AWS Dynamo DB | Optimal scalability, built for large-scale AI processing, additional support of AWS cloud, optimal real-time processing | Costly, lack of server-side updates which makes it difficult to bulk change records
 
 ## Potential Attributes Stored
+
 - each tray (ex: tray_id)
   - for keeping track of chick counts by YOLO11
 - chick counts for each tray by YOLO11
