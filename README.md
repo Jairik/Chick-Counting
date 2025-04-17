@@ -4,7 +4,7 @@ Under contract with Salisbury University and Perdue Farms, we plan on developing
 
 ## System Design
 
-![View Tentative System Design](/Documentation/Chick-Counting-System-Design-3_18_25-1.png)
+![View Tentative System Design](/documentation/Chick-Counting-System-Design-3_18_25-1.png)
 
 ## Workflow
 
