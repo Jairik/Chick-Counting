@@ -36,7 +36,7 @@ logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--record', default=True, dest='record', action='store_true', help='Record data')
-    parser.add_argument('-thermalfps', '--thermalframerate', default=15, type=float, help='Desired Framerate for Thermal Camera', dest='thermalframerate')
+    parser.add_argument('-thermalfps', '--thermalframerate', default=25, type=float, help='Desired Framerate for Thermal Camera', dest='thermalframerate')
     parser.add_argument('-rgbfps', '--rgbframerate', default=30, type=float, help='Desired Framerate for RGB Camera', dest='fps')
     parser.add_argument('-rgbpreview', '--rgbvideopreview', default=False, type=bool, help='See a preview of the RGB Camera')
     parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=False, type=bool, help='See a preview of the Thermal Camera')
@@ -110,7 +110,6 @@ def close_all_interfaces():
         pass
     
 # Define a signal handler to ensure clean closer upon CTRL+C
-
 def signal_handler(sig, frame):
     #Ensure clean exit in case of SIGINT or SIGTERM
     logger.info("Exiting due to SIGINT or SIGTERM")
@@ -350,7 +349,10 @@ time.sleep(2)
 picam2.stop()
 rgb_output.release()
 thermal_output.release()
-mi48.stop(stop_timeout=0.5)
+try:
+    mi48.stop(stop_timeout=0.5)
+except Exception:
+    pass  # Sometimes errors out, but is fine
 try:
     fd_data.close()
 except NameError:

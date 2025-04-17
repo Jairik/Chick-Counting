@@ -248,7 +248,7 @@ logger.info(camera_info)
 
 # set desired FPS
 # TODO: investigate issue at > 9 FPS on R-Pi 3B+
-mi48.set_fps(args.fps)
+mi48.set_fps(30)
 
 # see if filtering is available in MI48 and set it up
 if int(mi48.fw_version[0]) >= 2:
