@@ -221,22 +221,12 @@ tw, th = 62, 80  # Setting thermal camera dimensions (known)
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 rgb_filename = get_filename(tag='', cameraType="RGB") + ".m264"
 thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
-# rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (w, h))
 thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
-# Defining RGB dimensions based off dynamic test
-# initial_frame = picam2.capture_array()
-# actual_h, actual_w = initial_frame.shape[:2]
-# logger.debug(f"Captured frame dimensions for RGB Camera: width={actual_w}, height={actual_h}, expected: w={w}, h={h}")
-#rgb_output = cv2.VideoWriter(rgb_filename, fourcc, rgb_fps, (actual_w, actual_h))  # Dynamically setting video writer with actual dimensions
-# Ensuring that the video writers are successfully opened
-#if not rgb_output.isOpened():
-#    logger.error(f"Could not open RGB Writer (filename={rgb_filename})")
-#    sys.exit(1)
-
-print("Video Writers Initialized")
+logger.info("Video Writers Initialized")
 
 # Defining a global scope event
-stop_event = threading.Event()
+start_event = threading.Event()  # Synchronizing thread start
+stop_event = threading.Event()  # Synchronizing thread end
 
 # Defining a signal handler so everything successfully exits on Ctrl+C
 def safe_exit_signal_handler(sig, frame):
@@ -251,42 +241,25 @@ def safe_exit_signal_handler(sig, frame):
         logger.error(f"Error stopping MI48: {e}")
 
     logger.info("Signal Handler is done")
-    # Now, we  let main safely exit itself
+    # Now, we let main safely exit itself
 
 # Registering the signal handlers
 signal.signal(signal.SIGINT, safe_exit_signal_handler)
 signal.signal(signal.SIGTERM, safe_exit_signal_handler)
 
-''' RGB Camera Loop to capture video '''
+''' RGB Camera Loop to record video '''
 def capture_rgb():
+    start_event.wait()  # Parked until main schedules for synchronization purposes
     try:
- #       while not stop_event.is_set():
-            # Capture the frame
-#            frame = picam2.capture_array()
-            
-            # Display message if dimensions are off
-#            if frame.shape[0] != h or frame.shape[1] != w:
-#                logger.critical(f"RGB Camera dimensions are off (actual {h}, {w}")
-                # sys.exit(10)  # Exit with exit code
-
-            # Write the frame to the video file
-#            rgb_output.write(frame)
-            
-            # If user chooses, show video output
-#            if args.rgbvideopreview: cv2.imshow("Video", frame)
-            
-            # Break loop on pressing 'q'
-#            if cv2.waitKey(1) & 0xFF == ord('q'):
-#                break
-        picam2.start_recording(encoder, rgb_filename)
+        picam2.start_recording(encoder, rgb_filename)  # Only command we need, since encoding is so efficient
     except KeyboardInterrupt:
         picam2.stop_recording()
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         print(f"RGB video capture stopped at {cur_time}")
 
 ''' Thermal Camera Loop to capture video & collect data '''
-# args.thermalcamerapreview
 def capture_thermal():
+    start_event.wait()  # Parked until main schedules for synchronization purposes
     try:
         while not stop_event.is_set():
             if hasattr(mi48, 'data_ready'):
@@ -309,9 +282,11 @@ def capture_thermal():
             time.sleep(MI48_SPI_CS_DELAY)
             mi48_spi_cs_n.off()
 
+            # Writing the frame in the dat file
             if args.record:
                 write_frame(fd_data, data)
-
+            
+            # Converting the frame to a picture to write to the video writer
             img = data_to_frame(data, mi48.fpa_shape)
 
             if header is not None:
@@ -347,6 +322,10 @@ thermal_thread = threading.Thread(target=capture_thermal)  # No args needed
 rgb_thread.start()
 thermal_thread.start()
 
+# Setting standardized start time to synchronize thread execution
+start_time = time.time() + .05  # 50 ms in the future
+threading.Timer(start_time - time.time(), start_event.set).start()  # Schedule threads after 50 ms
+
 # Wait for both threads to finish cleanup
 rgb_thread.join()
 thermal_thread.join()
@@ -358,7 +337,6 @@ time.sleep(.5)
 ''' Release resources/additional cleanup once both threads are finished '''
 print("Releasing resources now...")
 picam2.stop()
-rgb_output.release()
 thermal_output.release()
 try:
     mi48.stop(stop_timeout=0.5)
