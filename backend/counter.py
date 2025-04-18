@@ -8,6 +8,8 @@ import yolo_implementation
 import clustering
 import inspect
 from data_processing import *
+import inspect
+from functools import partial
 
 #counter class, acts as a mount for yolo or custom models
 class Counter():
@@ -56,7 +58,7 @@ class Counter():
 		self._detected_totals = {}
 
 		#collect boolean info based off of pipeline brought in
-		self._using_preprocess_pipeline = False if(len(image_pipeline) == 0) else True
+		self._using_img_norm_pipeline = False if(len(image_pipeline) == 0) else True
 
 		#now we win define a functional pipeline for image simplification
 		#the pipeline will be in class-local saved variable from initiation
@@ -64,42 +66,10 @@ class Counter():
 		#the list represents each transformation in the pipeline
 		#each item is a dict, with kv pair being function name and dict of parameters
 		#each parameter dict pair will be in standard form of param_name:param_val
-		self._preprocess_pipeline = image_pipeline
+		#NOTE here we validate the pipeline brought in and assign the call list of inormfuncs END#NOTE
+		self._img_norm_pipeline = self.build_pipeline(image_pipeline)
 
-		#NOTE now we are going to validate the pipeline brought in END#NOTE
-
-		if(len(image_pipeline)>0):
-			
-			is_legal = True
-
-			#list collection of function names
-			func_names = []
-
-			#check each function info set
-			for f_i, func in enumerate(image_pipeline):
-
-				#get the function from the global namespace
-				transformer_func = globals().get(func)
-
-				#ensure that an illegal function name did not bypass initial test
-				if(not callable(transformer_func)):
-					is_legal = False
-					break
-
-				#now check each parameter set for each function
-				sig = inspect.signature(transformer_func)
-
-				#use try except on bind to ensure this works
-				try:
-					sig.bind(**image_pipeline[func])
-				except Exception as e:
-					raise ValueError(f"Pipeline function #{f_i+1} '{str(next(iter(func)))}'. Parameters cannot bind to function.")
-
-			#check if function loop has been broken
-			if(not is_legal):
-				raise ValueError(f"Pipeline function #{f_i+1} '{str(next(iter(func)))}' is not callable.")
-			
-		#NOTE if here is successful, pipeline is logically working on has no contents END#NOTE
+		#NOTE if here is successful, pipeline is logically working OR has no contents END#NOTE
 		
 
 	#count function, is called on each frame
@@ -122,11 +92,47 @@ class Counter():
 
 		#until then... (regarding dev note above)
 		#run the provided image through a processing pipeline per user request
-		if(self._using_preprocess_pipeline):
+		if(self._using_img_norm_pipeline):
 			processed_image = self.pipeline(image)
 
 		#all mounted counters should operate without fault, as they all contain count functionality
 		self._counter.count(processed_image)
+
+
+
+	def build_pipeline(
+		self,
+		image_pipeline
+	):
+		"""
+		Given image_pipeline = [
+		{'mask_red_thresh':   {'red_threshold': 127}},
+		{'normalize_sigmoid': {'gain': 1.2, 'cutoff': 0.5}},
+		…
+		]
+		returns a list of callables you can just loop and call on each image.
+		"""
+		call_list = []
+		for idx, func_map in enumerate(image_pipeline):
+			# unpack the one‐item dict
+			func_name, params = next(iter(func_map.items()))
+
+			# resolve and validate
+			fn = globals().get(func_name)
+			if not callable(fn):
+				raise ValueError(f"#{idx}: '{func_name}' is not defined or not callable")
+
+			sig = inspect.signature(fn)
+			try:
+				sig.bind_partial(**params)
+			except TypeError as e:
+				raise ValueError(f"#{idx}: bad params {params!r} for {func_name}{sig}\n -> {e}")
+
+			# bind parameters into a partial so our hot loop is simpler
+			call_list.append(partial(fn, **params))
+
+		return call_list
+
 
 	def pipeline(
 		self,
@@ -137,20 +143,8 @@ class Counter():
 		This function takes in a given image, and runs it through a pipeline of transformations requested.
 		'''
 
-		#for each function in the pipeline, extract function name and parameters
-		for transformer_name, transformer_params in self._preprocess_pipeline:
-
-			#get the function from the global namespace
-			transformer_func = globals().get(transformer_name)
-
-			#ensure that an illegal function name did not bypass initial test
-			if(not callable(transformer_func)):
-				raise KeyError(f"Function is not callable {str(transformer_name)}")
-
-			#apply transformation function and provided parameters to image
-			image = transformer_func(**transformer_params)
-
-			#and go again
+		for step in self._img_norm_pipeline:
+			image = step(image)    # step is already a fn(img, **params)
 
 		#return image after all transforming functions have been applied.
 		return image
@@ -186,20 +180,20 @@ class Counter():
 
 	#pipeline variables
 	@property
-	def preprocess_pipeline(self):
+	def img_norm_pipeline(self):
 		return NotImplementedError(f"make function that prints out pipeline functionality all pretty.")
 	
-	@preprocess_pipeline.setter
-	def preprocess_pipeline(self, new:list):
-		self._preprocess_pipeline = new
+	@img_norm_pipeline.setter
+	def img_norm_pipeline(self, new:list):
+		self._img_norm_pipeline = new
 
 	@property
-	def using_preprocess_pipeline(self):
-		return self._using_preprocess_pipeline
+	def using_img_norm_pipeline(self):
+		return self._using_img_norm_pipeline
 	
-	@using_preprocess_pipeline.setter
-	def using_preprocess_pipeline(self, new:bool):
-		self._using_preprocess_pipeline = new
+	@using_img_norm_pipeline.setter
+	def using_img_norm_pipeline(self, new:bool):
+		self._using_img_norm_pipeline = new
 
 	#detected centers
 
