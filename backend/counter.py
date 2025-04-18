@@ -146,7 +146,7 @@ class Counter():
 		for step in self._img_norm_pipeline:
 			image = step(image)    # step is already a fn(img, **params)
 
-		#return image after all transforming functions have been applied.
+		#return image after all transforming functions have been applied
 		return image
 
 		
