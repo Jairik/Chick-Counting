@@ -96,7 +96,7 @@ class Counter():
 			processed_image = self.pipeline(image)
 
 		#all mounted counters should operate without fault, as they all contain count functionality
-		self._counter.count(processed_image)
+		return self._counter.count(processed_image)
 
 
 

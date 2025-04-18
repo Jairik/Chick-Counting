@@ -60,6 +60,17 @@ def bgr_to_gray(frame:any=None):
     """
     return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+def rgb_to_gray(frame:any=None):
+    """
+    Convert a BGR image to a single-channel grayscale image.
+    
+    Args:
+        frame (np.ndarray): Input image in BGR order.
+    Returns:
+        np.ndarray: Grayscale image.
+    """
+    return cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
 
 def gray_threshold(
 	frame:any=None,
@@ -78,6 +89,102 @@ def gray_threshold(
     gray = bgr_to_gray(frame)
     _, binary = cv2.threshold(gray, thresh, maxval, method)
     return binary
+
+def mask_brightness_thresh(
+    frame: any = None,
+    brightness_threshold: int = 200
+):
+    """
+    Keep only those pixels where any color channel is above brightness_threshold.
+    All other pixels are set to black.
+
+    Args:
+        frame (np.ndarray): Input image in BGR (or RGB) order.
+        brightness_threshold (int): Threshold for masking bright pixels.
+
+    Returns:
+        np.ndarray: Masked image.
+    """
+    # Copy to avoid mutating the original frame
+    masked = frame.copy()
+
+    # Build a 2D mask: True wherever any of the three channels > threshold
+    bright_mask = np.any(masked > brightness_threshold, axis=2)
+
+    # Expand it back to 3 channels
+    full_mask = np.stack([bright_mask] * 3, axis=-1)
+
+    # Zero‑out every pixel where full_mask is False
+    masked[~full_mask] = 0
+
+    return masked
+
+import numpy as np
+
+def mask_inv_rgb_window(
+    frame: any = None,
+    lower_threshold: int = 100,
+    upper_threshold: int = 150
+):
+    """
+    Keep only those pixels whose R, G, and B channels all lie within
+    [lower_threshold, upper_threshold]. All other pixels are set to black.
+
+    Args:
+        frame (np.ndarray): Input image in BGR or RGB order (HxWx3).
+        lower_threshold (int): Lower bound of the window (inclusive).
+        upper_threshold (int): Upper bound of the window (inclusive).
+
+    Returns:
+        np.ndarray: Masked image where only the “in-window” pixels remain.
+    """
+    # avoid modifying the original
+    masked = frame.copy()
+
+    # mask where all three channels are within [lower, upper]
+    window_mask = np.all(
+        (masked >= lower_threshold) & (masked <= upper_threshold),
+        axis=2
+    )
+
+    # expand to 3 channels and zero out everything else
+    full_mask = np.stack([window_mask] * 3, axis=-1)
+    masked[~full_mask] = 0
+
+    return masked
+
+import numpy as np
+
+def mask_rgb_window(
+    frame: any = None,
+    lower_threshold: int = 100,
+    upper_threshold: int = 150
+):
+    """
+    Turn all pixels whose R, G, and B channels all lie within
+    [lower_threshold, upper_threshold] to black, and keep every other pixel unchanged.
+
+    Args:
+        frame (np.ndarray): Input image in BGR or RGB order (HxWx3).
+        lower_threshold (int): Lower bound of the window (inclusive).
+        upper_threshold (int): Upper bound of the window (inclusive).
+
+    Returns:
+        np.ndarray: Image where “in-window” pixels are zeroed out.
+    """
+    # Copy to avoid mutating the original frame
+    masked = frame.copy()
+
+    # Build a mask where all three channels are within [lower, upper]
+    window_mask = np.all(
+        (masked >= lower_threshold) & (masked <= upper_threshold),
+        axis=2
+    )
+
+    # Zero‑out pixels inside the window
+    masked[window_mask] = 0
+
+    return masked
 
 
 def mask_red_thresh(
