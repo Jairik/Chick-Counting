@@ -2,9 +2,19 @@ import cv2
 
 from ultralytics import solutions
 
-# Open the webcam
-cap = cv2.VideoCapture(0)
+# camera settings
+CAM_INDEX = 1
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 360
+CAM_FPS = 8
+
+# Open the webcam with DirectShow backend instead of default
+cap = cv2.VideoCapture(CAM_INDEX, cv2.CAP_DSHOW)
 assert cap.isOpened(), "Error reading online camera"
+
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+cap.set(cv2.CAP_PROP_FPS, CAM_FPS)
 
 # Get video properties: width, height, and frames per second (fps)
 w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
@@ -13,7 +23,7 @@ w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FR
 line_points = [(100, 200), (100, 600)]  # Line coordinates
 
 # Initialize the video writer to save the output video
-video_writer = cv2.VideoWriter("samplevid0.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+video_writer = cv2.VideoWriter("samplevid1.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
 assert video_writer.isOpened(), "Error: video writer failed to open!"
 
 # Initialize the Object Counter with visualization options and other parameters
@@ -43,9 +53,6 @@ except KeyboardInterrupt:
 # Release the video capture and writer objects
 cap.release()
 video_writer.release()
-#print("width:", w)
-#print("height:", h)
-#print("frames per sec:", fps)
 
 # Close all OpenCV windows
 cv2.destroyAllWindows()
