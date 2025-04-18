@@ -1,1 +1,3 @@
-folder for database and readme created on 2/13/2025
+# Skeleton folder for database
+
+Once substaintial data is collected, this folder will hold any necessary information regarding the database, such as schemas
