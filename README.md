@@ -1,5 +1,5 @@
-# Raspberry Pi Branch
+# Raspberry Pi Development Branch
 
-Will hold the resources and code needed for the raspberry pi, attempting to reduce the size of files needed to be cloned.
+Will hold various development tests, utilities, resources, and documentation for the raspberry pi.
 
-The main data collection script is under input-gathering/example/DUAL_VIDEO_CAPTURE, being in this hierchy due to dependency concerns. Once a completely working model is up and functional, I plan to clean up this branch so it only includes the necessary scripts. For now, however, every file is here for testing.
+Utilized for minimizing the filesize of the pi branch, which will be used for production data collection of the mock environment.
