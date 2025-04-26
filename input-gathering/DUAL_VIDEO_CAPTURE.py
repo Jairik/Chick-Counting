@@ -258,7 +258,11 @@ def capture_rgb():
         logger.info(f"RGB video capture stopped at {cur_time}")
 
 ''' Thermal Camera Loop to capture video & collect data '''
-def capture_thermal():
+def capture_thermal(clip_temp:float=-1):
+    '''
+    Logan implementation:
+    adding clip_temp parameter as from data to frame, is safe and does not need param
+    '''
     start_event.wait()  # Parked until main schedules for synchronization purposes
     try:
         while not stop_event.is_set():
@@ -287,7 +291,7 @@ def capture_thermal():
                 write_frame(fd_data, data)
             
             # Converting the frame to a picture to write to the video writer
-            img = data_to_frame(data, mi48.fpa_shape)
+            img = data_to_frame(data, mi48.fpa_shape, False, clip_temp)
 
             if header is not None:
                 logger.debug('  '.join([format_header(header),
