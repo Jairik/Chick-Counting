@@ -11,7 +11,7 @@ from datetime import datetime  # Timestamps of filenames
 import threading  # For multithreading with RGB and Thermal Outputs
 # RGB Camera Libraries
 from libcamera import controls
-from picamera2 import Picamera2, encoders, preview
+from picamera2 import Picamera2, encoders
 import cv2
 # Thermal Camera Libraries
 sys.path.append("/home/test/myenv/lib/python3.11/site-packages")
