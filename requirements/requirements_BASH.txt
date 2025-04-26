@@ -1,6 +1,0 @@
-feh
-libcamera
-libcamera-apps 
-libcamera-dev 
-python3-libcamera 
-python3-opencv
