@@ -11,8 +11,7 @@ from datetime import datetime  # Timestamps of filenames
 import threading  # For multithreading with RGB and Thermal Outputs
 # RGB Camera Libraries
 from libcamera import controls
-from picamera2 import Picamera2
-from picamera2.encoders import H264Encoder
+from picamera2 import Picamera2, encoders, preview
 import cv2
 # Thermal Camera Libraries
 sys.path.append("/home/test/myenv/lib/python3.11/site-packages")
@@ -56,14 +55,20 @@ def get_filename(tag, cameraType="thermal"):
     filename = "{}-{}--{}".format(cameraType, tag, ts)
     return filename
 
-def write_frame(outfile, arr):
-    '''Write a numpy array as a row in 
-    a file, using C ordering.'''
-    if arr.dtype == np.uint16:
-        outstr = ('{:n} '*arr.size).format(*arr.ravel(order='C')) + '\n'
+def write_frame(outfile, timestamp_str, frame_data):
+    '''Write a timestamp and numpy array as 
+    a row in a file, using C ordering.'''
+    # Start with the timestamp
+    outstr = f"{timestamp_str},"
+    
+    # Flatten the frame data and add to the comma-separated output string
+    if frame_data.dtype == np.uint16:
+        outstr += ','.join(f"{val}" for val in frame_data.ravel(order='C'))
     else:
-        outstr = ('{:.2f} '*arr.size).format(*arr.ravel(order='C')) + '\n'
+        outstr += ','.join(f"{val:.2f}" for val in frame_data.ravel(order='C'))
     try:
+        outstr += '\n'  # Add a newline character to the end of the string
+        # Attempt to write all the data at once
         outfile.write(outstr)
         outfile.flush()  # Flush the buffer since the str is fairly large
     except AttributeError:
@@ -188,7 +193,7 @@ with_header = True
 # Enable saving to a file
 if args.record:
     filename = get_filename(mi48.camera_id_hexsn)
-    fd_data = open(os.path.join('.', filename+'dat'), 'w')
+    fd_data = open(os.path.join('.', filename+'.csv'), 'w')
     
 # Starting the thermal camera
 mi48.start(stream=True, with_header=with_header)
@@ -210,7 +215,7 @@ rgb_config = picam2.create_video_configuration(
 )
 picam2.configure(rgb_config)  # Forcing correct resolution
 picam2.start()
-encoder = H264Encoder(bitrate=10_000_000)
+encoder = encoders.H264Encoder(codec="hevc", bitrate=10_000_000)
 logger.info("RGB Camera Initialized")
 w, h, rgb_fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
@@ -218,8 +223,8 @@ w, h, rgb_fps = 1920, 1080, 30
 tw, th = 62, 80  # Setting thermal camera dimensions (known)
 
 # Defining a video writer for rgb & thermal cameras (to save video to file)
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-rgb_filename = get_filename(tag='', cameraType="RGB") + ".m264"
+fourcc = cv2.VideoWriter_fourcc(*'HEVC')
+rgb_filename = get_filename(tag='', cameraType="RGB") + ".mp4"
 thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
 thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
 logger.info("Video Writers Initialized")
@@ -284,8 +289,9 @@ def capture_thermal():
 
             # Writing the frame in the dat file
             if args.record:
-                write_frame(fd_data, data)
-            
+                now = datetime.now()
+                ts = now.strftime('%Y%m%d-%H%M%S') + f'-{now.microsecond // 1000:03d}'
+                write_frame(fd_data, ts, data)
             # Converting the frame to a picture to write to the video writer
             img = data_to_frame(data, mi48.fpa_shape)
 
