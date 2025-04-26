@@ -1,5 +1,5 @@
-# Raspberry Pi Branch
+# Raspberry Pi Production Branch
 
-Will hold the resources and code needed for the raspberry pi, attempting to reduce the size of files needed to be cloned.
+Holds the methods for capturing data on the Raspberry Pi, minimizing external testing data to ensure lightweight and efficient retreival.
 
-The main data collection script is under input-gathering/example/DUAL_VIDEO_CAPTURE, being in this hierchy due to dependency concerns. Once a completely working model is up and functional, I plan to clean up this branch so it only includes the necessary scripts. For now, however, every file is here for testing.
+Only necessary dependency folders and files are in this repo, occasionally being updated once a new feature from pi-dev is ready for production.
