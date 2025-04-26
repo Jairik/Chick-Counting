@@ -1,0 +1,14 @@
+.. index:: mi48
+
+.. py:module:: senxor.mi48
+
+The MI48 abstraction
+====================
+
+The ``senxor.mi48`` module contains the MI48 class for abstracting the
+interaction with the MI48xx thermal imaging processor that controls
+the thermal camera module:
+
+.. autoclass:: MI48
+   :members:
+
