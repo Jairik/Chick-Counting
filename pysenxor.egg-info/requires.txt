@@ -1,0 +1,11 @@
+pyserial
+numpy
+crcmod
+opencv-python
+imutils
+matplotlib
+cmapy
+
+[:platform_system == "Linux"]
+smbus
+spidev

@@ -10,12 +10,11 @@ import time
 from datetime import datetime  # Timestamps of filenames
 import threading  # For multithreading with RGB and Thermal Outputs
 # RGB Camera Libraries
-from libcamera import controls
 from picamera2 import Picamera2
+# from libcamera import controls
 from picamera2.encoders import H264Encoder
 import cv2
 # Thermal Camera Libraries
-sys.path.append("/home/test/myenv/lib/python3.11/site-packages")
 from smbus import SMBus
 from spidev import SpiDev
 try:
@@ -205,12 +204,12 @@ if not camera_info:
 # Proceed with camera initialization
 picam2 = Picamera2()
 rgb_config = picam2.create_video_configuration(
-    main={"size": (1920, 1080), "format": "RGB888"},
-    encode="main"  # Name of steam to encode
+    main={"size": (1920, 1080)},
+    controls={"FrameRate": args.fps}
 )
 picam2.configure(rgb_config)  # Forcing correct resolution
-picam2.start()
 encoder = H264Encoder(bitrate=10_000_000)
+picam2.start()
 logger.info("RGB Camera Initialized")
 w, h, rgb_fps = 1920, 1080, 30
 #w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed

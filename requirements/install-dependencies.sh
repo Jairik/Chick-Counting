@@ -17,6 +17,7 @@ sudo apt install -y \
     libtiff-dev \
     libavcodec-dev \
     libavformat-dev \
+    libcap-dev \
     libswscale-dev \
     libv4l-dev \
     libxvidcore-dev \
@@ -44,6 +45,14 @@ sudo apt install -y libcamera-dev libcamera-apps
 echo "Installing required Python packages via pip..."
 pip install --upgrade pip
 pip install -r requirements.txt
+
+# Potentially redundant, but ensures all dependencies are successfully installed
+pip install numpy simplejpeg opencv-python
+
+# Install Picamera2 manually
+git clone https://github.com/raspberrypi/picamera2.git
+cd picamera2
+pip install .
 
 echo "All installations complete!"
 
