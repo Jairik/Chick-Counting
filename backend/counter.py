@@ -29,6 +29,7 @@ class Counter():
 		self,
 		counter_type	:	Literal['YOLO','Clustering']	=	None,
 		counter_kwargs	:	dict							=	{},
+		img_norm_mode	:	Literal['trans_list','bg_seg','None']	=	'trans_list',
 		image_pipeline	:	list							=	[]
 	):
 		assert (counter_type != None), "Counter_type not defined for class 'Counter'. Please select a valid option."
@@ -58,7 +59,7 @@ class Counter():
 		self._detected_totals = {}
 
 		#collect boolean info based off of pipeline brought in
-		self._using_img_norm_pipeline = False if(len(image_pipeline) == 0) else True
+		self._img_norm_pipeline_mode = img_norm_mode
 
 		#now we win define a functional pipeline for image simplification
 		#the pipeline will be in class-local saved variable from initiation
@@ -67,7 +68,7 @@ class Counter():
 		#each item is a dict, with kv pair being function name and dict of parameters
 		#each parameter dict pair will be in standard form of param_name:param_val
 		#NOTE here we validate the pipeline brought in and assign the call list of inormfuncs END#NOTE
-		self._img_norm_pipeline = self.build_pipeline(image_pipeline)
+		self._img_norm_pipeline = self.build_pipeline(image_pipeline, img_norm_mode)
 
 		#NOTE if here is successful, pipeline is logically working OR has no contents END#NOTE
 		
@@ -92,7 +93,7 @@ class Counter():
 
 		#until then... (regarding dev note above)
 		#run the provided image through a processing pipeline per user request
-		if(self._using_img_norm_pipeline):
+		if(self._img_norm_pipeline_mode != 'None'):
 			processed_image = self.pipeline(image)
 
 		#all mounted counters should operate without fault, as they all contain count functionality
@@ -102,7 +103,8 @@ class Counter():
 
 	def build_pipeline(
 		self,
-		image_pipeline
+		image_pipeline,
+		img_norm_mode
 	):
 		"""
 		Given image_pipeline = [
@@ -113,23 +115,46 @@ class Counter():
 		returns a list of callables you can just loop and call on each image.
 		"""
 		call_list = []
-		for idx, func_map in enumerate(image_pipeline):
-			# unpack the one‐item dict
-			func_name, params = next(iter(func_map.items()))
 
-			# resolve and validate
-			fn = globals().get(func_name)
-			if not callable(fn):
-				raise ValueError(f"#{idx}: '{func_name}' is not defined or not callable")
+		match(img_norm_mode):
+			case 'trans_list':
+				for idx, func_map in enumerate(image_pipeline):
+					# unpack the one‐item dict
+					func_name, params = next(iter(func_map.items()))
 
-			sig = inspect.signature(fn)
-			try:
-				sig.bind_partial(**params)
-			except TypeError as e:
-				raise ValueError(f"#{idx}: bad params {params!r} for {func_name}{sig}\n -> {e}")
+					# resolve and validate
+					fn = globals().get(func_name)
+					if not callable(fn):
+						raise ValueError(f"#{idx}: '{func_name}' is not defined or not callable")
 
-			# bind parameters into a partial so our hot loop is simpler
-			call_list.append(partial(fn, **params))
+					sig = inspect.signature(fn)
+					try:
+						sig.bind_partial(**params)
+					except TypeError as e:
+						raise ValueError(f"#{idx}: bad params {params!r} for {func_name}{sig}\n -> {e}")
+
+					# bind parameters into a partial so our hot loop is simpler
+					call_list.append(partial(fn, **params))
+
+			case 'bg_seg':
+				pass #make call list consisting of .apply
+				'''
+					here is some sample code from a testing website on 
+					how to implement cv2 background segmentation.
+					>>>			>>>			>>>
+					fgbg = cv.bgsegm.createBackgroundSubtractorMOG()
+					while(1):
+						ret, frame = cap.read()
+						fgmask = fgbg.apply(frame)
+						cv.imshow('frame',fgmask)
+						k = cv.waitKey(30) & 0xff
+						if k == 27:
+							break
+					>>>			>>>			>>>
+				'''
+			
+			case 'None':
+				pass #nothing needs appended to call list
 
 		return call_list
 
@@ -188,12 +213,12 @@ class Counter():
 		self._img_norm_pipeline = new
 
 	@property
-	def using_img_norm_pipeline(self):
-		return self._using_img_norm_pipeline
+	def img_norm_pipeline_mode(self):
+		return self._img_norm_pipeline_mode
 	
-	@using_img_norm_pipeline.setter
-	def using_img_norm_pipeline(self, new:bool):
-		self._using_img_norm_pipeline = new
+	@img_norm_pipeline_mode.setter
+	def img_norm_pipeline_mode(self, new:bool):
+		self._img_norm_pipeline_mode = new
 
 	#detected centers
 
