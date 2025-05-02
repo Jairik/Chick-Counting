@@ -10,6 +10,7 @@ import inspect
 from data_processing import *
 import inspect
 from functools import partial
+import cv2
 
 #counter class, acts as a mount for yolo or custom models
 class Counter():
@@ -68,7 +69,7 @@ class Counter():
 		#each item is a dict, with kv pair being function name and dict of parameters
 		#each parameter dict pair will be in standard form of param_name:param_val
 		#NOTE here we validate the pipeline brought in and assign the call list of inormfuncs END#NOTE
-		self._img_norm_pipeline = self.build_pipeline(image_pipeline, img_norm_mode)
+		self._img_norm_pipeline = self.build_pipeline(image_pipeline)
 
 		#NOTE if here is successful, pipeline is logically working OR has no contents END#NOTE
 		
@@ -103,22 +104,35 @@ class Counter():
 
 	def build_pipeline(
 		self,
-		image_pipeline,
-		img_norm_mode
+		image_pipeline
 	):
 		"""
-		Given image_pipeline = [
-		{'mask_red_thresh':   {'red_threshold': 127}},
-		{'normalize_sigmoid': {'gain': 1.2, 'cutoff': 0.5}},
-		…
-		]
-		returns a list of callables you can just loop and call on each image.
+		### info: ###
+		This function considers the pipeline mode that is going to be used in the hot loop for detection, and builds it accordingly.
+		### params: ###
+		- image-pipeline:
+		- - this is a list of desired transformations to be make to each frame. (OPTIONAL) EXAMPLE ON BOTTOM OF THIS WINDOW.
+		- - if the mode is set to bg_seg, then transformations are irrelevant as color
+		  - channels are destroyed, and this variable will not be considered.
+		EXAMPLE: 
+		>>> image_pipeline = [
+		>>> {'mask_red_thresh':   {'red_threshold': 127}},
+		>>> {'normalize_sigmoid': {'gain': 1.2, 'cutoff': 0.5}}
+		>>> ]
 		"""
+
+		#a call list will be used regardless of approach for simplicity
 		call_list = []
 
-		match(img_norm_mode):
+		#check which mode the pipeline is set to for proper construction
+		match(self._img_norm_pipeline_mode):
+
+			#using a transformation list, instead of cv2 background segmentation method
 			case 'trans_list':
+
+				#for each function provided in desired format
 				for idx, func_map in enumerate(image_pipeline):
+
 					# unpack the one‐item dict
 					func_name, params = next(iter(func_map.items()))
 
@@ -127,7 +141,10 @@ class Counter():
 					if not callable(fn):
 						raise ValueError(f"#{idx}: '{func_name}' is not defined or not callable")
 
+					#collect signature of function
 					sig = inspect.signature(fn)
+
+					#attempt binding the parameters to the signature
 					try:
 						sig.bind_partial(**params)
 					except TypeError as e:
@@ -136,26 +153,23 @@ class Counter():
 					# bind parameters into a partial so our hot loop is simpler
 					call_list.append(partial(fn, **params))
 
+			#using cv2's background MOG method segmentation function instead of transformation list
 			case 'bg_seg':
-				pass #make call list consisting of .apply
-				'''
-					here is some sample code from a testing website on 
-					how to implement cv2 background segmentation.
-					>>>			>>>			>>>
-					fgbg = cv.bgsegm.createBackgroundSubtractorMOG()
-					while(1):
-						ret, frame = cap.read()
-						fgmask = fgbg.apply(frame)
-						cv.imshow('frame',fgmask)
-						k = cv.waitKey(30) & 0xff
-						if k == 27:
-							break
-					>>>			>>>			>>>
-				'''
+
+				#load in segmentation model
+				fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
+
+				#generate a partial using a preprocessing function created in the data_preprocessing file
+				#this function is simply for routing 'frame' being passed in the hot loop properly to the function
+				#all this does is call fgbg.apply( on frame ) and then reconstructs the
+				#3 color channels so that the YOLO model is being passed a 3d ndarray with the dimensions it was expecting.
+				call_list.append(partial(background_segment, fgbg=fgbg))
 			
 			case 'None':
 				pass #nothing needs appended to call list
 
+		#under all circumstances, call list is complete and ready 
+		#to be used a normalization stepper in hot loop
 		return call_list
 
 
