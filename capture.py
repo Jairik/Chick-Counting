@@ -32,6 +32,11 @@ from senxor.interfaces import SPI_Interface, I2C_Interface
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 
+# Defining video dimensions
+w, h, rgb_fps = 1920, 1080, 30  # Ob-board RGB camera dimensions (known)
+tw, th = 62, 80  # Setting thermal camera dimensions (known)
+ew, eh, external_fps = 1920, 1080, 60  # External RGB camera dimensions (known)
+
 # Configuring argument parsing (Thermal Camera) for easy testing and expadability
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -193,7 +198,7 @@ if args.record:
 mi48.start(stream=True, with_header=with_header)
 logger.info("Thermal Camera is started")
 
-''' Setting up & calibrating the RGB Camera '''
+''' Setting up & calibrating the on-board RGB Camera '''
 
 # Ensure that camera is available
 camera_info = Picamera2.global_camera_info()
@@ -211,14 +216,11 @@ picam2.configure(rgb_config)  # Forcing correct resolution
 encoder = H264Encoder(bitrate=10_000_000)
 picam2.start()
 logger.info("RGB Camera Initialized")
-w, h, rgb_fps = 1920, 1080, 30
-#w, h, fps = 1280, 720, 60  # Utilized if higher framerate is needed
 
-tw, th = 62, 80  # Setting thermal camera dimensions (known)
-
-# Defining a video writer for rgb & thermal cameras (to save video to file)
+# Defining file names and video writers (where applicable) for rgb & thermal cameras (to save video to file)
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-rgb_filename = get_filename(tag='', cameraType="RGB") + ".m264"
+ob_rgb_filename = get_filename(tag='', cameraType="On-board-RGB") + ".m264"
+external_rgb_filename = get_filename(tag='', cameraType="External-RGB") + ".m264"
 thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
 thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
 logger.info("Video Writers Initialized")
@@ -246,15 +248,19 @@ def safe_exit_signal_handler(sig, frame):
 signal.signal(signal.SIGINT, safe_exit_signal_handler)
 signal.signal(signal.SIGTERM, safe_exit_signal_handler)
 
-''' RGB Camera Loop to record video '''
-def capture_rgb():
+''' On-Board RGB Camera Loop to record video '''
+def ob_capture_rgb():
     start_event.wait()  # Parked until main schedules for synchronization purposes
     try:
-        picam2.start_recording(encoder, rgb_filename)  # Only command we need, since encoding is so efficient
+        picam2.start_recording(encoder, ob_rgb_filename)  # Only command we need, since encoding is so efficient
     except KeyboardInterrupt:
         picam2.stop_recording()
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         logger.info(f"RGB video capture stopped at {cur_time}")
+        
+''' Exernal RGB Camera Loop to record video '''
+def external_capture_rgb():
+    pass
 
 ''' Thermal Camera Loop to capture video & collect data '''
 def capture_thermal(clip_temp:float=-1):
@@ -317,12 +323,12 @@ def capture_thermal(clip_temp:float=-1):
         thermal_output.release()
         logger.info("Thermal Camera Video Writer Released")  # Somewhat redundant
 
-''' Creating threads to divide thermal camera and rgb camera '''
-rgb_thread = threading.Thread(target=capture_rgb)  # No args needed
+''' Creating threads to divide thermal camera, on-board rgb camera, and external rgb camera '''
+ob_rgb_thread = threading.Thread(target=ob_capture_rgb)  # No args needed
 thermal_thread = threading.Thread(target=capture_thermal)  # No args needed
 
 # Starting the threads
-rgb_thread.start()
+ob_rgb_thread.start()
 thermal_thread.start()
 
 # Setting standardized start time to synchronize thread execution
@@ -330,7 +336,7 @@ start_time = time.time() + .05  # 50 ms in the future
 threading.Timer(start_time - time.time(), start_event.set).start()  # Schedule threads after 50 ms
 
 # Wait for both threads to finish cleanup
-rgb_thread.join()
+ob_rgb_thread.join()
 thermal_thread.join()
 
 # Allow threads some more time to finish

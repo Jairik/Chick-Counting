@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-# 1) Debian/RPi packages ───────────────────────────────────
+# 1) Debian/RPi packages
 sudo apt update
 sudo apt install -y --no-install-recommends \
   build-essential git cmake ninja-build pkg-config \
@@ -12,14 +12,14 @@ sudo apt install -y --no-install-recommends \
   python3-pip python3-wheel python3-setuptools \
   python3-numpy python3-smbus python3-spidev  # prebuilt wheels where possible
 
-# 2) create / recreate the venv (includes system packages) ─
+# 2) create / recreate the venv (includes system packages)
 cd "$HOME/Chick-Counting"
 rm -rf venv
 python3 -m venv --system-site-packages venv
 source venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel
 
-# 3) Python packages ────────────────────────────────────────
+# 3) Python packages
 pip install --upgrade \
   cmapy==0.6.6 \
   crcmod==1.7 \
@@ -28,15 +28,15 @@ pip install --upgrade \
   pyserial==3.5 \
   sphinxcontrib-programoutput==0.18
 
-# 4) Rebuild simplejpeg cleanly ─────────────────────────────
+# 4) Rebuild simplejpeg cleanly
 pip install --force-reinstall simplejpeg
 
-# 5) Install Picamera2 properly ─────────────────────────────
+# 5) Install Picamera2 properly
 git clone --depth 1 https://github.com/raspberrypi/picamera2.git tmp_picamera2
 pip install ./tmp_picamera2
 rm -rf tmp_picamera2
 
-# 6) Done ─ print confirmation ─────────────────────────────
+# 6) Done ─ print confirmation
 python - <<'PY'
 import numpy, simplejpeg, picamera2
 print("NumPy      :", numpy.__version__)
@@ -48,5 +48,5 @@ echo -e "\n✅  All dependencies built and installed."
 echo "Activate the environment any time with:"
 echo "  source ~/Chick-Counting/venv/bin/activate"
 echo "Then run:"
-echo "  python DUAL_VIDEO_CAPTURE.py"
+echo "  python capture.py"
 
