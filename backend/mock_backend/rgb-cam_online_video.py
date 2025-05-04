@@ -11,7 +11,7 @@ camera_modes = {
 	"high-res" : {"w": 1920, "h": 1080, "fps": 60}
 }
 
-mode = "ultra-fast"
+mode = "standard"
 s = camera_modes[mode]
 
 cap = cv2.VideoCapture(CAM_INDEX, cv2.CAP_DSHOW)
