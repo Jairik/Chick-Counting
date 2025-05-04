@@ -266,10 +266,12 @@ def external_capture_rgb():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, eh)  # Set height
     cap.set(cv2.CAP_PROP_FPS, external_fps)  # Set FPS
 
+    # Ensure that the capture device is opened successfully
     if not cap.isOpened():
         logger.error("External RGB camera could not be opened")
         return
 
+    # Declare a video writer with correct codec and filename
     out = cv2.VideoWriter(external_rgb_filename, fourcc, external_fps, (ew, eh))
 
     try:
@@ -288,10 +290,9 @@ def external_capture_rgb():
 
     except KeyboardInterrupt:
         logger.info("External RGB video capture interrupted")
-    finally:
+    finally:  # Internal Cleanup
         cap.release()
         out.release()
-        cv2.destroyAllWindows()
         logger.info("External RGB Camera resources released")
 
 
@@ -359,10 +360,12 @@ def capture_thermal(clip_temp:float=-1):
 ''' Creating threads to divide thermal camera, on-board rgb camera, and external rgb camera '''
 ob_rgb_thread = threading.Thread(target=ob_capture_rgb)  # No args needed
 thermal_thread = threading.Thread(target=capture_thermal)  # No args needed
+external_rgb_thread = threading.Thread(target=external_capture_rgb)  # No args needed
 
 # Starting the threads
 ob_rgb_thread.start()
 thermal_thread.start()
+external_rgb_thread.start() 
 
 # Setting standardized start time to synchronize thread execution
 start_time = time.time() + .05  # 50 ms in the future
@@ -371,6 +374,7 @@ threading.Timer(start_time - time.time(), start_event.set).start()  # Schedule t
 # Wait for both threads to finish cleanup
 ob_rgb_thread.join()
 thermal_thread.join()
+external_rgb_thread.join()
 
 # Allow threads some more time to finish
 logger.info("Sleeping for a little to allow threads to complete...")
