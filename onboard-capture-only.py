@@ -1,4 +1,4 @@
-''' This file aims to capture Onboard RGB, Onboard Thermal, and External RGB video outputs at once, time stamping and saving to a common folder '''
+''' This file aims to capture both the RGB and Thermal Camera video outputs at once, time stamping and saving to a common folder '''
 
 # Misc Libraries
 import logging
@@ -260,41 +260,7 @@ def ob_capture_rgb():
         
 ''' Exernal RGB Camera Loop to record video '''
 def external_capture_rgb():
-    start_event.wait()  # Parked until main schedules for synchronization purposes
-    cap = cv2.VideoCapture(0)  # Open the default webcam
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, ew)  # Set width
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, eh)  # Set height
-    cap.set(cv2.CAP_PROP_FPS, external_fps)  # Set FPS
-
-    # Ensure that the capture device is opened successfully
-    if not cap.isOpened():
-        logger.error("External RGB camera could not be opened")
-        return
-
-    # Declare a video writer with correct codec and filename
-    out = cv2.VideoWriter(external_rgb_filename, fourcc, external_fps, (ew, eh))
-
-    try:
-        while not stop_event.is_set():
-            ret, frame = cap.read()
-            if not ret:
-                logger.error("Failed to read frame from external RGB camera")
-                break
-
-            out.write(frame)  # Write the frame to the video file
-
-            if args.rgbvideopreview:
-                cv2.imshow("External RGB Camera", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-
-    except KeyboardInterrupt:
-        logger.info("External RGB video capture interrupted")
-    finally:  # Internal Cleanup
-        cap.release()
-        out.release()
-        logger.info("External RGB Camera resources released")
-
+    pass
 
 ''' Thermal Camera Loop to capture video & collect data '''
 def capture_thermal(clip_temp:float=-1):
@@ -360,12 +326,10 @@ def capture_thermal(clip_temp:float=-1):
 ''' Creating threads to divide thermal camera, on-board rgb camera, and external rgb camera '''
 ob_rgb_thread = threading.Thread(target=ob_capture_rgb)  # No args needed
 thermal_thread = threading.Thread(target=capture_thermal)  # No args needed
-external_rgb_thread = threading.Thread(target=external_capture_rgb)  # No args needed
 
 # Starting the threads
 ob_rgb_thread.start()
 thermal_thread.start()
-external_rgb_thread.start() 
 
 # Setting standardized start time to synchronize thread execution
 start_time = time.time() + .05  # 50 ms in the future
@@ -374,7 +338,6 @@ threading.Timer(start_time - time.time(), start_event.set).start()  # Schedule t
 # Wait for both threads to finish cleanup
 ob_rgb_thread.join()
 thermal_thread.join()
-external_rgb_thread.join()
 
 # Allow threads some more time to finish
 logger.info("Sleeping for a little to allow threads to complete...")
