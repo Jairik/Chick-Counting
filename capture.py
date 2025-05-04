@@ -260,7 +260,40 @@ def ob_capture_rgb():
         
 ''' Exernal RGB Camera Loop to record video '''
 def external_capture_rgb():
-    pass
+    start_event.wait()  # Parked until main schedules for synchronization purposes
+    cap = cv2.VideoCapture(0)  # Open the default webcam
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, ew)  # Set width
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, eh)  # Set height
+    cap.set(cv2.CAP_PROP_FPS, external_fps)  # Set FPS
+
+    if not cap.isOpened():
+        logger.error("External RGB camera could not be opened")
+        return
+
+    out = cv2.VideoWriter(external_rgb_filename, fourcc, external_fps, (ew, eh))
+
+    try:
+        while not stop_event.is_set():
+            ret, frame = cap.read()
+            if not ret:
+                logger.error("Failed to read frame from external RGB camera")
+                break
+
+            out.write(frame)  # Write the frame to the video file
+
+            if args.rgbvideopreview:
+                cv2.imshow("External RGB Camera", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+    except KeyboardInterrupt:
+        logger.info("External RGB video capture interrupted")
+    finally:
+        cap.release()
+        out.release()
+        cv2.destroyAllWindows()
+        logger.info("External RGB Camera resources released")
+
 
 ''' Thermal Camera Loop to capture video & collect data '''
 def capture_thermal(clip_temp:float=-1):
