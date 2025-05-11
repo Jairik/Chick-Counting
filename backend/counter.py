@@ -28,7 +28,7 @@ class Counter():
 	'''
 	def __init__(
 		self,
-		counter_type	:	Literal['YOLO','Clustering']	=	None,
+		counter_type	:	Literal['YOLO','contour']	=	None,
 		counter_kwargs	:	dict							=	{},
 		img_norm_mode	:	Literal['trans_list','bg_seg','None']	=	'trans_list',
 		image_pipeline	:	list							=	[]
@@ -43,8 +43,8 @@ class Counter():
 				self._counter = yolo_implementation.YOLO_ObjectCounter(**counter_kwargs)
 
 			#if we are working with a custom clustering model, NOTE DEV HERE END#NOTE
-			case 'Clustering':
-				raise NotImplementedError(f'Counter type {counter_type} has not yet been implemented.')
+			case 'contour':
+				self._counter = clustering.contour()
 			
 		#this variable keeps the string variable of the type of counter, ex: YOLO
 		self._counter_type = counter_type
