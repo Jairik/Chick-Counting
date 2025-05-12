@@ -10,10 +10,9 @@ import time
 from datetime import datetime  # Timestamps of filenames
 import threading  # For multithreading with RGB and Thermal Outputs
 # RGB Camera Libraries
-from picamera2 import Picamera2
+from picamera2 import Picamera2, Preview
 # from libcamera import controls
 from picamera2.encoders import H264Encoder
-import cv2
 # Thermal Camera Libraries
 from smbus import SMBus
 from spidev import SpiDev
@@ -43,8 +42,8 @@ def parse_args():
     parser.add_argument('-r', '--record', default=True, dest='record', action='store_true', help='Record data')
     parser.add_argument('-thermalfps', '--thermalframerate', default=25, type=float, help='Desired Framerate for Thermal Camera', dest='thermalframerate')
     parser.add_argument('-rgbfps', '--rgbframerate', default=30, type=float, help='Desired Framerate for RGB Camera', dest='fps')
-    parser.add_argument('-rgbpreview', '--rgbvideopreview', default=False, type=bool, help='See a preview of the RGB Camera')
-    parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=False, type=bool, help='See a preview of the Thermal Camera')
+    parser.add_argument('-rgbpreview', '--rgbvideopreview', default=True, type=bool, help='See a preview of the RGB Camera')
+    parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=True, type=bool, help='See a preview of the Thermal Camera')
     args = parser.parse_args()
     return args
 
@@ -214,15 +213,18 @@ rgb_config = picam2.create_video_configuration(
 )
 picam2.configure(rgb_config)  # Forcing correct resolution
 encoder = H264Encoder(bitrate=10_000_000)
+if args.rgbvideopreview:
+    picam2.start_preview(Preview.QTGL)  # Start the preview window
+    logger.info("RGB Camera Preview is started")
 picam2.start()
 logger.info("RGB Camera Initialized")
 
 # Defining file names and video writers (where applicable) for rgb & thermal cameras (to save video to file)
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+fourcc = cv.VideoWriter_fourcc(*'mp4v')
 ob_rgb_filename = get_filename(tag='', cameraType="On-board-RGB") + ".m264"
 external_rgb_filename = get_filename(tag='', cameraType="External-RGB") + ".m264"
 thermal_filename = get_filename(tag='', cameraType="Thermal") + ".mp4"
-thermal_output = cv2.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
+thermal_output = cv.VideoWriter(thermal_filename, fourcc, args.thermalframerate, (tw, th))
 logger.info("Video Writers Initialized")
 
 # Defining a global scope event
@@ -254,14 +256,12 @@ def ob_capture_rgb():
     try:
         picam2.start_recording(encoder, ob_rgb_filename)  # Only command we need, since encoding is so efficient
     except KeyboardInterrupt:
+        if args.rgbvideopreview:
+            picam2.stop_preview()
         picam2.stop_recording()
         cur_time = time.strftime('%Y%m%d-%H%M%S', time.localtime()) + f'-{datetime.now().microsecond // 1000:03d}'
         logger.info(f"RGB video capture stopped at {cur_time}")
         
-''' Exernal RGB Camera Loop to record video '''
-def external_capture_rgb():
-    pass
-
 ''' Thermal Camera Loop to capture video & collect data '''
 def capture_thermal(clip_temp:float=-1):
     '''
@@ -304,16 +304,22 @@ def capture_thermal(clip_temp:float=-1):
             else:
                 logger.debug(format_framestats(data))
 
+            # Turn raw data into a 8bit visually interpretable image
             img8u = cv.normalize(img.astype('uint8'), None, 255, 0, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
             img8u = cv_filter(img8u, parameters={'blur_ks':3}, use_median=False, use_bilat=True, use_nlm=False)
+
+            # Applying colormap and resizing
+            thermal_colored_frame = cv.applyColorMap(img8u, cv.COLORMAP_JET)
+            thermal_resized_frame = cv.resize(thermal_colored_frame, (tw, th))
             
+            # Live preview
             if args.thermalcamerapreview:
-                cv_display(img8u)
+                cv.imshow("Thermal Camera", thermal_resized_frame)
                 key = cv.waitKey(1)  # & 0xFF
                 if key == ord("q"):
                     break
-            thermal_colored_frame = cv.applyColorMap(img8u, cv.COLORMAP_JET)
-            thermal_resized_frame = cv.resize(thermal_colored_frame, (tw, th))
+                
+            # Write the frame to the video    
             thermal_output.write(thermal_resized_frame)
             
     except KeyboardInterrupt:
@@ -355,4 +361,4 @@ try:
     fd_data.close()
 except NameError:
     pass  # File descriptor is already closed
-cv2.destroyAllWindows()
+cv.destroyAllWindows()
