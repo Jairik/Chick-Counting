@@ -1,31 +1,23 @@
 ''' This file aims to capture both the RGB and Thermal Camera video outputs at once, time stamping and saving to a common folder '''
 
-# Misc Libraries
-import logging
-import sys
-import os
-import signal  # For clean thread handling/synchronization
-import argparse  # Expandability
-import time
-from datetime import datetime  # Timestamps of filenames
-import threading  # For multithreading with RGB and Thermal Outputs
-# RGB Camera Libraries
+# Standard libraries
+import argparse, logging, os, signal, sys, threading, time
+from datetime import datetime
+
+# Third‑party libraries
+import numpy as np
+import cv2 as cv
 from picamera2 import Picamera2, Preview
-# from libcamera import controls
 from picamera2.encoders import H264Encoder
-# Thermal Camera Libraries
 from smbus import SMBus
 from spidev import SpiDev
-try:
-    from gpiozero import Pin, DigitalInputDevice, DigitalOutputDevice
-except:
-    logger.error("ERROR- Must install gpiozero with pip3 install gpiozero")
-    sys.exit()
-import numpy as np # Plotting thermal values into pictures
-import cv2 as cv
+from gpiozero import DigitalInputDevice, DigitalOutputDevice
+
+# Local thermal packages
 from senxor.mi48 import MI48, DATA_READY, format_header, format_framestats
 from senxor.utils import data_to_frame, cv_filter
 from senxor.interfaces import SPI_Interface, I2C_Interface
+
 
 # Configuring logger for debugging purposes
 logger = logging.getLogger(__name__)
@@ -39,11 +31,22 @@ ew, eh, external_fps = 1920, 1080, 60  # External RGB camera dimensions (known)
 # Configuring argument parsing (Thermal Camera) for easy testing and expadability
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--record', default=True, dest='record', action='store_true', help='Record data')
+    parser = argparse.ArgumentParser()
+    # Argument for recording data (saving video and thermal data)
+    parser.add_argument('--record', action='store_true', help="Save .dat and video files")
+    parser.add_argument('--no-record', action='store_false', dest='record')
+    parser.set_defaults(record=True)
+    # Argument for getting a preview of the RGB camera
+    parser.add_argument('--rgbpreview', action='store_true', help="Show RGB preview window")
+    parser.add_argument('--no-rgbpreview', action='store_false', dest='rgbpreview')
+    parser.set_defaults(rgbpreview=True)
+    # Argument for getting a preview of the Thermal camera
+    parser.add_argument('--thermalpreview', action='store_true', help="Show thermal preview window")
+    parser.add_argument('--no-thermalpreview', action='store_false', dest='thermalpreview')
+    parser.set_defaults(thermalpreview=True)
+    # Argument for fps of thermal and RGB cameras
     parser.add_argument('-thermalfps', '--thermalframerate', default=25, type=float, help='Desired Framerate for Thermal Camera', dest='thermalframerate')
     parser.add_argument('-rgbfps', '--rgbframerate', default=30, type=float, help='Desired Framerate for RGB Camera', dest='fps')
-    parser.add_argument('-rgbpreview', '--rgbvideopreview', default=True, type=bool, help='See a preview of the RGB Camera')
-    parser.add_argument('-thermalpreview', '--thermalcamerapreview', default=True, type=bool, help='See a preview of the Thermal Camera')
     args = parser.parse_args()
     return args
 
