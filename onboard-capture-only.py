@@ -1,7 +1,7 @@
 ''' This file aims to capture both the RGB and Thermal Camera video outputs at once, time stamping and saving to a common folder '''
 
 # Standard libraries
-import argparse, logging, os, signal, sys, threading, time
+import argparse, logging, os, signal, sys, threading, time, csv
 from datetime import datetime
 
 # Third‑party libraries
@@ -62,22 +62,17 @@ def get_filename(tag, cameraType="thermal"):
     filename = "{}-{}--{}".format(cameraType, tag, ts)
     return filename
 
-def write_frame(outfile, arr):
-    '''Write a numpy array as a row in 
-    a file, using C ordering.'''
-    if arr.dtype == np.uint16:
-        outstr = ('{:n} '*arr.size).format(*arr.ravel(order='C')) + '\n'
-    else:
-        outstr = ('{:.2f} '*arr.size).format(*arr.ravel(order='C')) + '\n'
+def write_frame_csv(outfile, arr):
+    '''Write a flattened frame as one CSV row'''
     try:
-        outfile.write(outstr)
-        outfile.flush()  # Flush the buffer since the str is fairly large
-    except AttributeError:
-        # Manually write to the file line by line
-        with open(outfile, 'a') as fh:
-            fh.write(outstr)
-        return None
-    except IOError:
+        writer = csv.writer(outfile)
+        row = arr.ravel(order='C')
+        # if you want floats formatted to 2 decimal places:
+        if arr.dtype != np.uint16:
+            row = [f"{x:.2f}" for x in row]
+        writer.writerow(row)
+        outfile.flush()
+    except Exception as e:
         logger.critical('Cannot write to {} (IOERROR)'.format(outfile))
         sys.exit(106)  # Exit with specific code
         
@@ -116,20 +111,6 @@ def close_all_interfaces():
     except NameError:
         pass
     
-# Define a signal handler to ensure clean closer upon CTRL+C
-def signal_handler(sig, frame):
-    #Ensure clean exit in case of SIGINT or SIGTERM
-    logger.info("Exiting due to SIGINT or SIGTERM")
-    mi48.stop(poll_timeout=0.5, stop_timeout=1.2)  # Close all connections from device
-    time.sleep(0.5)
-    logger.info("Done")
-    sys.exit(0)  # Exit with success'
-
-
-# Define the signals that should be handled to ensure clean exit
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
 # Create an I2C interface object
 i2c = I2C_Interface(SMBus(RPI_GPIO_I2C_CHANNEL), MI48_I2C_ADDRESS)
 
@@ -194,7 +175,9 @@ with_header = True
 # Enable saving to a file
 if args.record:
     filename = get_filename(mi48.camera_id_hexsn)
-    fd_data = open(os.path.join('.', filename+'dat'), 'w')
+    csv_path = os.path.join('.', filename + '.csv')
+    fd_data = open(csv_path, 'a', newline='')
+    csv_writer = csv.writer(fd_data)   
     
 # Starting the thermal camera
 mi48.start(stream=True, with_header=with_header)
@@ -238,9 +221,8 @@ stop_event = threading.Event()  # Synchronizing thread end
 def safe_exit_signal_handler(sig, frame):
     logger.info("Exiting due to SIGINT or SIGTERM")
     stop_event.set()  # Signal all threads to stop
-
     time.sleep(0.5)  # Wait a small amount of time to threads to finish loops
-
+    # Try to stop the MI48
     try:
         mi48.stop(poll_timeout=0.5, stop_timeout=1.2)
     except Exception as e:
@@ -296,7 +278,7 @@ def capture_thermal(clip_temp:float=-1):
 
             # Writing the frame in the dat file
             if args.record:
-                write_frame(fd_data, data)
+                write_frame_csv(fd_data, data)
             
             # Converting the frame to a picture to write to the video writer
             img = data_to_frame(data, mi48.fpa_shape, False, clip_temp)
