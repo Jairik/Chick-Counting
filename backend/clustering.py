@@ -16,35 +16,29 @@ class contour():
 	The contour method will utilize CV2's contour functionality.
 	'''
 	def __init__(
+		self
 	):
 		pass
 
 	def count(
-		image	:	any,
-		color_order	:	Literal['rgb','grb','therm']	=	'rgb'
+		self,
+		image	:	any
 	):
-		match(color_order):
-			case 'rgb':
+		
+		#convert to gray
+		gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-				#use cv2 built in function ot convert the RGB format to grayscale
-				gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-			
-			case 'brg':
+		#get binary thresh of the image
+		ret, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
 
-				#use cv2 built in function to convert the BGR format to grayscale
-				gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		#detect the countours on the binary image using cv2. chain approximate none
+		contours, hierarchy = cv2.findContours(
+			image=thresh, 
+			mode=cv2.RETR_TREE, 
+			method=cv2.CHAIN_APPROX_NONE
+		)
 
-			case 'therm':
-
-				#do something
-				pass
-
-		#grayscale is now comeplete
-		#now we need to binarize the image based off of pixel values
-
-		ret, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-
-		return
+		return cv2.drawContours(image=image, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=3)
 	
 
 class temporal_crf():
