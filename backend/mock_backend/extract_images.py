@@ -5,9 +5,9 @@ import cv2
 import os
 
 
-video_file = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/IMG_3222.MOV" # may be scaled up to use live video footage from raspberry pi
-output_folder = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/Demo_Extracting" # directory for images to be saved to
-frame_interval = 20 # so were not saving every single frame
+video_file = "/mnt/linuxlab/home/aforti2/PerdueFarms/TestGroup1/videos/perdue_rgb_video5_061725.mp4"
+output_folder = "/mnt/linuxlab/home/aforti2/PerdueFarms/TestGroup1/videoframes/vf5" # directory for images to be saved to
+frame_interval = 25 # so were not saving every single frame
 assert os.path.exists(video_file), "error: video file not found"
 os.makedirs(output_folder, exist_ok=True)
 
@@ -25,7 +25,7 @@ while cap.isOpened():
 
 	# save frame as image in chosen directory
 	if frame_count % frame_interval == 0:
-		filename = os.path.join(output_folder, f"frame_{saved_count}.jpg")
+		filename = os.path.join(output_folder, f"vf5_{saved_count}.jpg")
 		cv2.imwrite(filename, frame)
 
 		saved_count += 1
