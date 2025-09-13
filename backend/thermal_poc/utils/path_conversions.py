@@ -7,13 +7,21 @@ import subprocess
 from pathlib import Path
 from typing import Union
 
-__all__ = ["get_local_source"]
+__all__ = ["get_source"]
 
 # Main function, get the correct source path
-def get_source():
+def get_source(vid_name: str = "Top_Belt(Iron)_01.mp4") -> str:
     ''' Return the local, correct path for the video source for testing the thermal model '''
-    win = "" 
-
+    HERE = Path(__file__).resolve().parent
+    REPO = HERE.parents[2]  # Chick-Counting/
+    VIDEO = str(REPO / "data" / "Brennen-Thermal-Video" / vid_name)  # Return the source
+    if is_windows_path(VIDEO):
+        return to_wsl_path(VIDEO, must_exist=True)
+    elif os.path.exists(VIDEO):
+        return VIDEO
+    else:
+        print(f"Error: Video source not found: {VIDEO}")
+        raise FileNotFoundError(f"Video source not found: {VIDEO}")
 
 ''' Path conversion on Windows when using WSL (helpers) '''
 
