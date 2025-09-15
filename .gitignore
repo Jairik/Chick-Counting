@@ -1,5 +1,8 @@
 /.backend_venv
 /.venv
+/.virtual_environment
+/.new_virtual_env
+/.local_data
 /data
 /.vscode
 /runs
