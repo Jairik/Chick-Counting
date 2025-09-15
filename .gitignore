@@ -1,2 +1,6 @@
 /.backend_venv
 /.venv
+/data
+/.vscode
+/runs
+data.zip
