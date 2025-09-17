@@ -1,4 +1,4 @@
-joblib==1.4.2
-numpy==2.2.4
-ultralytics==8.3.109
-opencv-python==4.9.0.80
+joblib
+numpy
+ultralytics
+opencv-python
