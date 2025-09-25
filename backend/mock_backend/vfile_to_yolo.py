@@ -2,7 +2,7 @@ import cv2
 from ultralytics import solutions
 
 # Video file path (replace with your actual path)
-VIDEO_PATH = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Testing/tennisball_test4_cold.mp4"
+VIDEO_PATH = ""
 
 # Open the video file instead of the webcam
 cap = cv2.VideoCapture(VIDEO_PATH)
@@ -28,7 +28,7 @@ assert video_writer.isOpened(), "Error: video writer failed to open!"
 counter = solutions.ObjectCounter(
     show=True,                   # Display the image during processing
     region=line_points,         # Region of interest points
-    model="C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/backend/mock_backend/tennisball_final/run/weights/best.pt",         # Ultralytics YOLOv11 model file
+    model="",         # Ultralytics YOLOv11 model file
     line_width=2,               # Thickness of the lines and bounding boxes
 )
 
