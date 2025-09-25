@@ -5,8 +5,8 @@ import cv2
 import os
 
 
-video_file = "/mnt/linuxlab/home/aforti2/PerdueFarms/TestGroup1/videos/perdue_rgb_video5_061725.mp4"
-output_folder = "/mnt/linuxlab/home/aforti2/PerdueFarms/TestGroup1/videoframes/vf5" # directory for images to be saved to
+video_file = ""
+output_folder = "" # directory for images to be saved to
 frame_interval = 25 # so were not saving every single frame
 assert os.path.exists(video_file), "error: video file not found"
 os.makedirs(output_folder, exist_ok=True)
@@ -34,4 +34,5 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
+
 print("program terminated successfully")
