@@ -99,19 +99,23 @@ def denorm_temps_bw_thermal(
         results.append((frame_idx, t, hi_val, lo_val))
         
         #printout every 100 frames to ensure running in time
-        if(frame_idx%100==0):
+        if(frame_idx%2000==0):
             print(f"frame idx: {frame_idx}")
 
         frame_idx += 1
 
     cap.release()
+    del cap
+    del frame
 
 
     temp_rngs = np.asarray(results)
 
+    del results, frame0
+
     #spit out all 100th frame temps for quick validation by eye if need to see what is going wrong
     for i in range(temp_rngs.shape[0]):
-        if i%100==0:
+        if i%2000==0:
             print(temp_rngs[i])
 
     #plt.plot(temp_rngs[:, 3])
@@ -166,6 +170,8 @@ def denorm_temps_bw_thermal(
     #plt.imshow(m,cmap='gray')
     #plt.show()
 
+    del frame0
+
     #same initialization as above
     frame_idx = 0
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
@@ -216,6 +222,9 @@ def denorm_temps_bw_thermal(
     therm_denorm = np.stack(therm_denorm, axis=0)
 
     cap.release()
+    del cap
+
+    print(f"Compressing...")
 
     #made a few different methods of compressing.
     #saving and loading NOTE should be all autonomous so there is NOTE no need in knowning what is going on here
