@@ -1,10 +1,6 @@
 # Chick-Counting Project
 
-Under contract with Salisbury University and Perdue Farms, we plan on developing a highly accurate image-recognition ML algorithm to predict the number of chicks dropping off of a converyor belt. We plan to utilize custom hardware for data collection, an optimized image detection algorithm in the backend, and a developer & user-friendly frontend for the client.
-
-## System Design
-
-![View Tentative System Design](/documentation/Chick-Counting-System-Design-3_18_25-1.png)
+Under contract with Salisbury University and Perdue Farms, we plan on developing a highly accurate image-recognition ML algorithm to predict the number of chicks dropping off of a converyor belt. We plan to deliver a POC model to be used in production.
 
 ## Workflow
 
