@@ -2,6 +2,7 @@ import cv2
 import supervision as sv
 import numpy as np
 from ultralytics import YOLO
+from utils.thermal_frame_to_temp import results_to_temp_frame
 
 def get_line_from_video_frame(frame):
     frame_height, frame_width = frame.shape[:2]
@@ -58,6 +59,12 @@ def chick_counting(video_path, output_path, line_points):
 
             # Run YOLO on frame
             results = model(frame)[0]
+            
+            # Get the frame image as denormalized numpy array
+            temp_arr: np.array = results_to_temp_frame(results)
+            
+            # Get bounding box predictions 
+            ### TODO : FIGURE OUT HOW TO WORK THIS INTO THE PIPELINE
 
             # Convert results to supervision Detections
             detections = sv.Detections.from_ultralytics(results)
