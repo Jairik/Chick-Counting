@@ -1,4 +1,69 @@
+# ---- Core scientific stack
+numpy==2.2.6
+scipy==1.16.2
+pandas>=2.2,<3.0
+polars==1.33.1
+
+# ---- Plotting
+matplotlib==3.10.6
+kiwisolver==1.4.9
+cycler==0.12.1
+fonttools==4.59.2
+pyparsing==3.2.4
+Pygments==2.19.2
+
+# ---- Notebooks / IPython
+ipython~=9.5
+ipykernel~=6.30
+jupyter_client~=8.6
+jupyter_core~=5.8
+traitlets~=5.14
+prompt_toolkit~=3.0
+matplotlib-inline~=0.1
+pexpect==4.9.0
+ptyprocess==0.7.0
+asttokens==3.0.0
+executing==2.2.1
+stack-data==0.6.3
+decorator==5.2.1
+jedi==0.19.2
+ipython_pygments_lexers==1.1.1
+comm==0.2.3
+platformdirs==4.4.0
+
+# ---- Utils
 joblib
-numpy
-ultralytics
-opencv-python
+requests==2.32.5
+urllib3==2.5.0
+charset-normalizer==3.4.3
+idna==3.10
+python-dateutil==2.9.0.post0
+six==1.17.0
+filelock==3.19.1
+packaging==25.0
+psutil==7.0.0
+PyYAML==6.0.2
+tornado==6.5.2
+wcwidth==0.2.13
+MarkupSafe==3.0.2
+Jinja2==3.1.6
+setuptools>=68
+
+# ---- Computer Vision
+opencv-python==4.12.0.88
+pillow==11.3.0
+pytesseract==0.3.13
+
+# ---- Ultralytics / PyTorch
+torch~=2.5
+torchvision~=0.20
+torchaudio~=2.5
+ultralytics>=8.3,<9.0
+
+# ---- Other Misc
+networkx==3.5
+sympy==1.14.0
+mpmath==1.3.0
+fsspec==2025.9.0
+pyzmq==27.1.0
+uv  # Just for faster installs and runs
