@@ -1,0 +1,12 @@
+train: ../train/images
+val: ../valid/images
+
+nc: 1
+names: ['ball']
+
+roboflow:
+  workspace: the-workspace-tvx9r
+  project: tennisballmock
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/the-workspace-tvx9r/tennisballmock/dataset/1
