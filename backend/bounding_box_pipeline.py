@@ -99,7 +99,7 @@ def get_box_features(
     x.append(gbbf.get_yellow_variance(box))  # Variance of yellows
     x.append(gbbf.get_yellow_range(box))  # Range of yellows
     x.append(gbbf.get_pixels_over_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels over certain threshold
-    x.append(gbbf.get_pixels_under_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels under certain theshold
+    x.append(gbbf.get_pixels_under_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels under certain threshold
     x.append(gbbf.get_mean_distance_from_threshold(box, threshold=30.0))  # Mean distance from 30C
     x.append(gbbf.get_aspect_ratio(box))  # Aspect ratio of the bounding box
     x.append((gbbf.get_estimated_segment_objects_scipy(box, threshold=30.0)))  # Estimated number of objects in the box using scipy labeling
