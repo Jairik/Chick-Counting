@@ -1,7 +1,0 @@
-Temporary Devnote: Will move to pi-dev if works
-
-sudo vim /boot/config.txt
-
-Find the line: dtparam=spi=on
-
-and BELOW it, add: dtoverlay=spi0-1cs
