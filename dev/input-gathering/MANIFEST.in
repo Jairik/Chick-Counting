@@ -1,0 +1,12 @@
+#include README
+#include LICENSE
+
+#graft doc
+#graft test
+
+recursive-exclude docs/build *
+recursive-exclude docs/figures *
+recursive-exclude docs/ *.log
+
+global-exclude *.py[co]
+global-exclude *DS_Store
