@@ -67,7 +67,7 @@ def get_estimated_segment_objects_scipy(box: np.array, threshold: float) -> int:
     Estimate the number of objects in a bounding box by segmenting based on a threshold
     '''
     from scipy.ndimage import label
-    mask = (box > threshold).astype(np.unit8)
+    mask = (box > threshold).astype(np.uint8)
     labeled, num_objects = label(mask)
     return num_objects
 
