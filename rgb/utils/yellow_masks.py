@@ -6,7 +6,7 @@ from typing import Tuple
 
 __all__ = ['get_yellow_mask']
 
-def get_yellow_mask(image: np.array, normalize: bool = true) -> np.array:
+def get_yellow_mask(image: np.array, normalize: bool = True) -> np.array:
     '''
     Generate a yellow mask of the image
     Parameters:

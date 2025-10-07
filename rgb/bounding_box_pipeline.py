@@ -9,7 +9,8 @@ Contents:
 import joblib  # Loading models
 import numpy as np  # General computations and stuff
 from typing import List, Tuple  # Type hinting
-from ultralytics.yolo.engine.results import Results as YOLOResults  # YOLO results object
+from ultralytics.engine.results import Results as YOLOResults  # YOLO results object
+from ultralytics.engine.results import Boxes  # YOLO Boxes object
 from sklearn.svm import SVC  # Example model, replace with actual model as needed
 import utils.get_bounding_box_features as gbbf  # Importing feature extraction functions
 import cv2  # Image processing
@@ -19,12 +20,13 @@ import csv  # Saving results to CSV
 __all__ = ["get_box_count"]
 
 MIN_BOX_THRESHOLD = 10  # Minimum size of a bounding box to be considered valid (in pixels) - May need to be adjusted
+MODEL = SVC()  # Example model type
 
 # Main functionality to map bounding box coordinates to a specific chick count
 def get_box_count(
-    box: YOLOResults[0].boxes[0],  # A specific box from a YOLO result
+    box: Boxes,  # A specific box from a YOLO result
     yellow_scaled_frame: np.array,  # The full numpy array of data, scaled for "amount" of yellow, of the full frame 
-    model,  # The pre-trained model to estimate chick counts
+    model = MODEL,  # The pre-trained model to estimate chick counts
 ) -> int:
     '''
     Map a bounding box to a specific chick count.
@@ -81,7 +83,7 @@ def validate_bounding_box(
 
 # Helper function to engineer specific features from the bounding box data
 def get_box_features(
-    box: YOLOResults[0].boxes[0],  # A specific box instance from a results object
+    box: np.array,  # A specific box instance from a results object
 ) -> np.ndarray:
     '''
     Extract features from the contents of a bounding box to pass into a model
