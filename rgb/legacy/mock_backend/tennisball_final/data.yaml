@@ -1,0 +1,12 @@
+train: ../train/images
+val: ../valid/images
+
+nc: 1
+names: ['ball-pQXp']
+
+roboflow:
+  workspace: the-workspace-tvx9r
+  project: rgb_thermal_tennis_labeling
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/the-workspace-tvx9r/rgb_thermal_tennis_labeling/dataset/3

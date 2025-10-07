@@ -1,15 +1,6 @@
 # Chick-Counting Project - Thermal Branch
 
-Under contract with Salisbury University and Perdue Farms, we plan on developing a highly accurate image-recognition ML algorithm to predict the number of chicks dropping off of a conveyor belt. This branch will specifically observe the collected **thermal data**.
-
-## Current System Design
-
-![Current System Design - Bounding Box Extraction](/misc/documentation/Init-Bounding-Box-Architecture.drawio.png)
-
-## Contributors
-
-- [JJ McCauley](https://github.com/Jairik)
-- [Logan Kelsch](https://github.com/Logan-Kelsch)
+Under contract with Salisbury University and Perdue Farms, we plan on developing a highly accurate image-recognition ML algorithm to predict the number of chicks dropping off of a converyor belt. We plan to deliver a POC model to be used in production.
 
 ## Workflow
 
