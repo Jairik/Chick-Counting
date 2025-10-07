@@ -11,7 +11,7 @@ import numpy as np  # General computations and stuff
 from typing import List, Tuple  # Type hinting
 from ultralytics.yolo.engine.results import Results as YOLOResults  # YOLO results object
 from sklearn.svm import SVC  # Example model, replace with actual model as needed
-import backend.get_bounding_box_features as gbbf  # Importing feature extraction functions
+import utils.get_bounding_box_features as gbbf  # Importing feature extraction functions
 import cv2  # Image processing
 from datetime import datetime  # Timestamping for saved files
 import csv  # Saving results to CSV
