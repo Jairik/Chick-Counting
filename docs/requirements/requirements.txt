@@ -1,0 +1,11 @@
+cmapy==0.6.6
+crcmod==1.7
+gpiozero==2.0.1
+matplotlib==3.10.1
+numpy==2.2.5
+picamera2==0.3.25
+pyserial==3.5
+setuptools==79.0.1
+smbus==1.1.post2
+sphinxcontrib_programoutput==0.18
+spidev==3.6

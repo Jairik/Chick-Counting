@@ -71,6 +71,7 @@ class SPI_Interface:
 
     def read(self, length_in_words):
         # MI48 operates as a full duplex device and requires
+        # a dummy write byte for every byte read back
         length_in_bytes = 2 * length_in_words
         dummy_bytes = [0,] * self.xfer_size
         xfer_size_words = int(self.xfer_size / 2)

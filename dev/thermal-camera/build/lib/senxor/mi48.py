@@ -1,6 +1,7 @@
 # Copyright (C) Meridian Innovation Ltd. Hong Kong, 2020. All rights reserved.
 #
 import sys
+sys.path.append("/home/test/myenv/lib/python3.11/site-packages")
 import logging
 import functools
 import time
@@ -923,7 +924,7 @@ def format_framestats(data):
     """Format data frame stats to represent in log messages"""
     s = "Min {:6.1f}   Max {:6.1f}  Avg {:5.1f}  Std {:3.1f}".\
             format(data.min(), data.max(), data.mean(),
-                   data.astype(np.float).std())
+                   data.astype(np.float64).std())
     return s
 
     

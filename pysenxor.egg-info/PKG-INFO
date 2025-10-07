@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: pysenxor
+Version: 1.4.1
+Summary: Python SDK for Meridian Innovation's SenXor.
+Author: Stanislav Markov, Meridian Innovation Ltd.
+Platform: platform independent
+Classifier: Programming Language :: Python
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering
+Requires-Dist: pyserial
+Requires-Dist: smbus; platform_system == "Linux"
+Requires-Dist: spidev; platform_system == "Linux"
+Requires-Dist: numpy
+Requires-Dist: crcmod
+Requires-Dist: opencv-python
+Requires-Dist: imutils
+Requires-Dist: matplotlib
+Requires-Dist: cmapy
+Dynamic: author
+Dynamic: classifier
+Dynamic: description
+Dynamic: platform
+Dynamic: requires-dist
+Dynamic: summary
+
+
+

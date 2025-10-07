@@ -101,11 +101,16 @@ def connect_senxor(src=None, name=None):
             mi48 = MI48([usb,usb], name=name, read_raw=False)
     return mi48, connected_port, port_names
 
-def data_to_frame(data, array_shape, hflip=False):
+def data_to_frame(data, array_shape, hflip=False, clip_mode:float=-1):
     """
     Convert 1D array into nH x nV 2D array corresponding to the FPA.
 
     Use this func to change orientation to forward looking camera with `hflip`.
+    ### Logan implementation: ###
+    clip mode parameter will be used for backtesting initially.<br>
+    -1: will not clip highest temperature, standard minmax normalization.
+    >0: will clip all temperatures to this value
+
     """
     # Note that the data coming for the EVK is stored as a 1D array.
     # the data.reshape() reconstructs the 2D FPA array shape; 
@@ -118,6 +123,17 @@ def data_to_frame(data, array_shape, hflip=False):
         frame = np.flip(data.reshape(array_shape, order='F').T, 1)
     else:
         frame = data.reshape(array_shape, order='F').T
+    
+    #Logan implementation of clipping
+    #check to see if temps will be clipped
+    if(clip_mode!=-1):
+
+        #skipping validation
+
+        #clipping all temps above clip_mode to clip_mode, and respecting rounding property
+        frame = np.round(np.clip(frame, None, clip_mode), 2)
+
+    #END Logans implementation of clipping
     return frame.copy()
 
 def remap(data, new_range=(0, 255), curr_range=None, to_uint8=True):

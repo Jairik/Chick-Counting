@@ -1,3 +1,5 @@
 venv/
 pi-scripts/
 /.venv
+ChickCounting/
+/.ChickCounting
