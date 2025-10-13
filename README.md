@@ -1,4 +1,4 @@
-# Chick-Counting Project - Thermal Branch
+# Chick-Counting Project - RGB Branch
 
 Under contract with Salisbury University and Perdue Farms, we plan on developing a highly accurate image-recognition ML algorithm to predict the number of chicks dropping off of a converyor belt. We plan to deliver a POC model to be used in production.
 
