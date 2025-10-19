@@ -81,7 +81,7 @@ def validate_bounding_box(
 
 # Helper function to engineer specific features from the bounding box data
 def get_box_features(
-    box,  # A specific box instance from a results object
+    box: np.array,  # A specific box instance from a results object
 ) -> np.ndarray:
     '''
     Extract features from the contents of a bounding box to pass into a model
@@ -92,18 +92,17 @@ def get_box_features(
     '''
     x = list()  # Initializing list to hold features
     
-    # Feature Extraction - TODO TEST THESE & OPTIMIZE NEXT WEEK
     x.append(gtf.get_area(box))  # Total area of the bounding box
     x.append(gtf.get_mean_temperature(box))  # Mean temperature in the bounding box
     x.append(gtf.get_temperature_std(box))  # Standard deviation of temperatures
     x.append(gtf.get_temperature_variance(box))  # Variance of temperatures
     x.append(gtf.get_temperature_range(box))  # Range of temperatures
-    x.append(gtf.get_pixels_over_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels over 30C
-    x.append(gtf.get_pixels_under_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels under 30C
-    x.append(gtf.get_mean_distance_from_threshold(box, threshold=30.0))  # Mean distance from 30C
+    x.append(gtf.get_pixels_over_threshold(box, threshold=.8, relative=True))  # Relative count of pixels over 30C
+    x.append(gtf.get_pixels_under_threshold(box, threshold=.8, relative=True))  # Relative count of pixels under 30C
+    x.append(gtf.get_mean_distance_from_threshold(box, threshold=.8))  # Mean distance from 30C
     x.append(gtf.get_aspect_ratio(box))  # Aspect ratio of the bounding box
-    x.append((gtf.get_estimated_segment_objects_scipy(box, threshold=30.0)))  # Estimated number of objects in the box using scipy labeling
-    x.append((gtf.get_estimated_segment_objects_contours(box, threshold=35.0)))  # Estimated number of objects in the box using cv2 contours
+    #x.append((gtf.get_estimated_segment_objects_scipy(box, threshold=.8)))  # Estimated number of objects in the box using scipy labeling
+    #x.append((gtf.get_estimated_segment_objects_contours(box, threshold=.8)))  # Estimated number of objects in the box using cv2 contours
     
     # Convert to numpy array and return
     return np.array(x)
