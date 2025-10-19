@@ -9,9 +9,9 @@ Contents:
 import joblib  # Loading models
 import numpy as np  # General computations and stuff
 from typing import List, Tuple  # Type hinting
-from ultralytics.yolo.engine.results import Results as YOLOResults  # YOLO results object
+from ultralytics.engine.results import Results as YOLOResults  # YOLO results object
 from sklearn.svm import SVC  # Example model, replace with actual model as needed
-import backend.thermal_poc.utils.get_thermal_features as gtf  # Importing feature extraction functions
+import utils.get_thermal_features as gtf  # Importing feature extraction functions
 import cv2  # Image processing
 from datetime import datetime  # Timestamping for saved files
 import csv  # Saving results to CSV
@@ -22,7 +22,7 @@ MIN_BOX_THRESHOLD = 10  # Minimum size of a bounding box to be considered valid 
 
 # Main functionality to map bounding box coordinates to a specific chick count
 def get_box_count(
-    box: YOLOResults[0].boxes[0],  # A specific box from a YOLO result
+    box,  # A specific box from a YOLO result
     temperature_frame: np.array,  # The full numpy array of temperature data for the entire frame
     model,  # The pre-trained model to estimate chick counts
 ) -> int:
@@ -81,7 +81,7 @@ def validate_bounding_box(
 
 # Helper function to engineer specific features from the bounding box data
 def get_box_features(
-    box: YOLOResults[0].boxes[0],  # A specific box instance from a results object
+    box,  # A specific box instance from a results object
 ) -> np.ndarray:
     '''
     Extract features from the contents of a bounding box to pass into a model

@@ -4,7 +4,7 @@ import numpy as np
 from ultralytics.engine.results import Results, Boxes
 from typing import List, Tuple, Set
 
-__all__ = ["group_bounding_boxes"]
+__all__ = ["group_bounding_boxes", "merge_group_bounding_box"]
 
 def _get_iou_xyxy(a: np.ndarray, b: np.ndarray) -> float:
     """Compute IoU for two [x1,y1,x2,y2] boxes (numpy arrays)."""
@@ -25,52 +25,41 @@ def _get_iou_xyxy(a: np.ndarray, b: np.ndarray) -> float:
     union = area_a + area_b - inter
     if union <= 0.0:
         return 0.0
+    
+    # Return the IoU
+    return inter / union
 
 def group_bounding_boxes(
-    results: Results,
-    overlapping_threshold: float = 0.05
-) -> List[Boxes]:
-    '''
-    Groups overlapping bounding boxes from a YOLO results object.
-    Parameters:
-        results: The YOLO results object containing bounding boxes
-        overlapping_threshold: The IoU threshold to consider boxes as overlapping
-    Returns:
-        List[Boxes]: A list of grouped bounding boxes
-    '''
-    
-    # Initialize list to hold and track grouped boxes
-    grouped_boxes: List[Boxes] = []
-    boxes: Boxes = results.boxes  # Extract boxes from results
-    used_indices: Set[int] = set()  # Track indices of boxes that have been grouped
-    num_boxes: int = len(boxes)
-    
-    # Loop through each box and group overlapping ones
-    for i in range(num_boxes):
-        
-        # Skip already grouped boxes
-        if i in used_indices:
+    xyxy: np.ndarray,
+    iou_thresh: float = 0.05
+) -> List[List[int]]:
+    """
+    Group indices of overlapping boxes given an (N,4) xyxy float array.
+    Returns a list of groups, each a list of indices into xyxy.
+    """
+    assert xyxy.ndim == 2 and xyxy.shape[1] == 4, "xyxy must be (N,4)"
+    n = len(xyxy)
+    used = set()
+    groups: List[List[int]] = []
+    for i in range(n):
+        if i in used:
             continue
-        
-        # Get current box and start a new group
-        current_box: np.array = boxes.xyxy[i].cpu().numpy()  # Current box coordinates
-        group: List[int] = [i]  # Start a new group with the current box
-        
-        # Check for overlapping boxes
-        for j in range(i + 1, num_boxes):
-            if j in used_indices:
-                continue  # Skip already grouped boxes
-            
-            compare_box: np.array = boxes.xyxy[j].cpu().numpy()  # Box to compare with
-            iou = _get_iou_xyxy(current_box, compare_box)  # Compute IoU
-            
-            if iou >= overlapping_threshold:
-                group.append(j)  # Add to group if overlapping
-                used_indices.add(j)  # Mark as used
-        
-        # Create a new Boxes object for the grouped boxes
-        grouped_box_coords: np.array = np.array([boxes.xyxy[k].cpu().numpy() for k in group])
-        grouped_boxes.append(Boxes(xyxy=grouped_box_coords))
-        used_indices.add(i)  # Mark current box as used
-        
-    return grouped_boxes  # Return the list of grouped bounding boxes
+        g = [i]
+        for j in range(i + 1, n):
+            if j in used:
+                continue
+            if _get_iou_xyxy(xyxy[i], xyxy[j]) >= iou_thresh:
+                g.append(j)
+                used.add(j)
+        used.update(g)
+        groups.append(g)
+    return groups
+
+# Helper for merging multiple boxes into one enclosing box
+def merge_group_bounding_box(xyxy: np.ndarray, idxs: list[int]) -> tuple[int,int,int,int]:
+    """ Merges multiple boxes, returning a big enclosing box (clipped to ints). """
+    xs1 = xyxy[idxs, 0]; ys1 = xyxy[idxs, 1]
+    xs2 = xyxy[idxs, 2]; ys2 = xyxy[idxs, 3]
+    x1 = int(np.floor(xs1.min())); y1 = int(np.floor(ys1.min()))
+    x2 = int(np.ceil(xs2.max()));  y2 = int(np.ceil(ys2.max()))
+    return x1, y1, x2, y2
