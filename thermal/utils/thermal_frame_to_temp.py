@@ -4,6 +4,7 @@ from typing import Literal
 import blosc
 import numpy as np
 import matplotlib.pyplot as plt
+from ultralytics.engine.results import Results
 
 __all__ = ['result_to_temp_frame']
 
