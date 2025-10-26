@@ -1,5 +1,6 @@
 /.backend_venv
 /.venv
+/.venv3
 /.virtual_environment
 /.new_virtual_env
 /.local_data
@@ -11,3 +12,4 @@ thermal/misc/data/data
 thermal/misc/data/
 backend/proof_of_concept/demo_mount/output/marble_bgsg_retrtree.avi
 /misc/data/data
+/rgb/object_counting_output.avi
