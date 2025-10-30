@@ -3,6 +3,8 @@ numpy==2.2.6
 scipy==1.16.2
 pandas>=2.2,<3.0
 polars==1.33.1
+scikit-learn
+opencv-python
 
 # ---- Plotting
 matplotlib==3.10.6
@@ -48,7 +50,6 @@ wcwidth==0.2.13
 MarkupSafe==3.0.2
 Jinja2==3.1.6
 setuptools>=68
-python-tk
 
 # ---- Computer Vision
 opencv-python==4.12.0.88
