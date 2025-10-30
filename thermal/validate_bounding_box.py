@@ -32,10 +32,9 @@ MIN_BOX_THRESHOLD = 10  # Minimum height/width of a bounding box to be considere
 
 # Main functionality to map bounding box coordinates to a specific chick count
 def get_box_count(
-    merged_box_indicies,  # Indicies of the merged bounding box from the current frame
-    temperature_frame: np.array,  # The full numpy array of temperature data for the entire frame
+    temperature_frame: Optional[np.array] = None,  # The full numpy array of temperature data for the entire frame
     pipeline,  # The pre-trained model pipeline to estimate chick counts
-    box: Optional[Boxes] = None,  # A specific box from a YOLO result
+    box: Optional[Boxes, np.ndarray, np.array, list] = None,  # Box to process
 ) -> int:
     '''
     Map a bounding box to a specific chick count.
@@ -47,23 +46,29 @@ def get_box_count(
         int: Estimated number of chicks in the given bounding box
     '''
     
+    skip_extraction: bool = False  # Flag to skip temperature extract if it is already provided
+    box_temp_data: np.array = temperature_frame  # Initialize box temperature data with full frame data
+    
     # Extract necessary data with type checking
     if isinstance(box, Boxes):
         x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
+    elif isinstance(box, list) or isinstance(box, np.ndarray) or isinstance(box, np.array):
+        skip_extraction = True
     else:
         raise TypeError(f"Unsupported box type: {type(box)}")
     
-    # Ensure that the bounding box is valid before computing
-    if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return
-    
-    # Extract the specific temperatures of the bounding box from the full frame
-    box_temp_data = temperature_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
-    
+    if not skip_extraction:
+        # Ensure that the bounding box is valid before computing
+        if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return
+        
+        # Extract the specific temperatures of the bounding box from the full frame
+        box_temp_data = temperature_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
+        
     # Extract specific features from the bounding box data
     box_features = get_box_features(box_temp_data)
     
     # Run the helper model to predict counts in specific bounding boxes
-    estimated_count = get_model_prediction(features=box_features, pipeline=pipeline, save_all=True, temp_data=box_temp_data)
+    estimated_count = get_model_prediction(features=box_features, pipeline=pipeline, save_all=False, temp_data=box_temp_data)
     
     return estimated_count
 
