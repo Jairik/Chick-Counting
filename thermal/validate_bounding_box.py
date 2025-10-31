@@ -34,7 +34,7 @@ MIN_BOX_THRESHOLD = 10  # Minimum height/width of a bounding box to be considere
 def get_box_count(
     pipeline,  # The pre-trained model pipeline to estimate chick counts
     temperature_frame: Optional[np.ndarray] = None,  # The full numpy array of temperature data for the entire frame
-    box: Optional[Union[Boxes, np.ndarray, list]] = None,  # Box to process
+    box: Optional[Union[Boxes, np.ndarray, list, tuple]] = None,  # Box to process
 ) -> int:
     '''
     Map a bounding box to a specific chick count.
@@ -54,12 +54,14 @@ def get_box_count(
         x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
     elif isinstance(box, (list, np.ndarray)):
         skip_extraction = True
+    elif isinstance(box, tuple):
+        x_min, y_min, x_max, y_max = map(float, box)
     else:
         raise TypeError(f"Unsupported box type: {type(box)}")
     
     if not skip_extraction:
         # Ensure that the bounding box is valid before computing
-        if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return
+        if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return None
         
         # Extract the specific temperatures of the bounding box from the full frame
         box_temp_data = temperature_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
