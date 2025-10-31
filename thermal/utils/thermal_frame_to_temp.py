@@ -57,7 +57,7 @@ def result_to_temp_frame(
     ROI_LOW  = (x1, y2, w1, h1)
 
     # Getting the BGR frame from the YOLO result
-    frame = _extract_bgr_from_yolo_res(yolo_result)
+    frame = _extract_bgr_from_yolo_res(result)
     t = frame_idx / (fps or 30.0)
 
     # Only run OCR every four frames; otherwise carry forward previous values
