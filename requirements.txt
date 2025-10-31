@@ -68,8 +68,6 @@ sympy==1.14.0
 mpmath==1.3.0
 fsspec==2025.9.0
 pyzmq==27.1.0
-uv  # Just for faster installs and runs
-
-# ---- Random
 supervision
 blosc
+uv  # Just for faster installs and runs

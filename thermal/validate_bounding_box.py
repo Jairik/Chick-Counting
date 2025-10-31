@@ -17,7 +17,7 @@ Main Function (get_box_count):
 
 import joblib  # Loading models
 import numpy as np  # General computations and stuff
-from typing import List, Tuple, Optional  # Type hinting
+from typing import List, Tuple, Optional, Union  # Type hinting
 from ultralytics.engine.results import Results as YOLOResults  # YOLO results object
 from ultralytics.engine.results import Boxes
 from sklearn.svm import SVC  # Example model, replace with actual model as needed
@@ -32,9 +32,9 @@ MIN_BOX_THRESHOLD = 10  # Minimum height/width of a bounding box to be considere
 
 # Main functionality to map bounding box coordinates to a specific chick count
 def get_box_count(
-    temperature_frame: Optional[np.array] = None,  # The full numpy array of temperature data for the entire frame
     pipeline,  # The pre-trained model pipeline to estimate chick counts
-    box: Optional[Boxes, np.ndarray, np.array, list] = None,  # Box to process
+    temperature_frame: Optional[np.ndarray] = None,  # The full numpy array of temperature data for the entire frame
+    box: Optional[Union[Boxes, np.ndarray, list]] = None,  # Box to process
 ) -> int:
     '''
     Map a bounding box to a specific chick count.
@@ -47,12 +47,12 @@ def get_box_count(
     '''
     
     skip_extraction: bool = False  # Flag to skip temperature extract if it is already provided
-    box_temp_data: np.array = temperature_frame  # Initialize box temperature data with full frame data
+    box_temp_data: np.ndarray = temperature_frame  # Initialize box temperature data with full frame data
     
     # Extract necessary data with type checking
     if isinstance(box, Boxes):
         x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
-    elif isinstance(box, list) or isinstance(box, np.ndarray) or isinstance(box, np.array):
+    elif isinstance(box, (list, np.ndarray)):
         skip_extraction = True
     else:
         raise TypeError(f"Unsupported box type: {type(box)}")
@@ -101,7 +101,7 @@ def validate_bounding_box(
 
 # Helper function to engineer specific features from the bounding box data
 def get_box_features(
-    box: np.array,  # A specific box instance from a results object
+    box: np.ndarray,  # A specific box instance from a results object
 ) -> np.ndarray:
     '''
     Extract features from the contents of a bounding box to pass into a model
@@ -132,7 +132,7 @@ def get_model_prediction(
     features: any,  # The features extracted from the bounding box data
     pipeline: any,  # The pre-trained model to estimate chick counts
     save_all: bool = False,  # Flag to save each prediction for analysis
-    temp_data: Optional[np.array] = None  # The raw temperature data for the bounding box, if saving is enabled
+    temp_data: Optional[np.ndarray] = None  # The raw temperature data for the bounding box, if saving is enabled
 ) -> int:
     '''
     Run a helper model on the extracted features to estimate chick counts

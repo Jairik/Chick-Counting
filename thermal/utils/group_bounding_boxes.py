@@ -2,7 +2,7 @@
 
 import numpy as np
 from ultralytics.engine.results import Results, Boxes
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Any, Optional
 
 __all__ = ["group_bounding_boxes", "merge_group_bounding_box"]
 
@@ -22,7 +22,7 @@ def group_and_merge_bounding_boxes(xyxy: np.ndarray, tracker_ids: List[Any], tar
     if not target_indices: return None
     
     # Group all bounding boxes
-    groups = group_bounding_boxes(xyxy=xyxy[target_indices], iou_thres=iou_thresh)
+    groups = group_bounding_boxes(xyxy=xyxy[target_indices], iou_thresh=iou_thresh)
     
     # Find which group contains the target indices
     target_group = None
@@ -31,7 +31,7 @@ def group_and_merge_bounding_boxes(xyxy: np.ndarray, tracker_ids: List[Any], tar
         if first_target_index in g:
             target_group = g
             break
-    if matched_group is None: return None  # Error checking, shouldn't happen
+    if target_group is None: return None  # Error checking, shouldn't happen
     
     # Get the boxes and ids for the target group
     group_boxes = xyxy[matched_group]
