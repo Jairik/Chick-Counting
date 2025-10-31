@@ -34,11 +34,11 @@ def group_and_merge_bounding_boxes(xyxy: np.ndarray, tracker_ids: List[Any], tar
     if target_group is None: return None  # Error checking, shouldn't happen
     
     # Get the boxes and ids for the target group
-    group_boxes = xyxy[matched_group]
-    group_ids = [tracker_ids[i] for i in matched_group]
+    group_boxes = xyxy[target_group]
+    group_ids = [tracker_ids[i] for i in target_group]
     
     # Merge the boxes in the target group
-    merged_box = merge_group_bounding_box(xyxy=xyxy, idxs=matched_group)
+    merged_box = merge_group_bounding_box(xyxy=xyxy, idxs=target_group)
     
     return [merged_box, group_ids]  # Return the merged box and the associated tracker IDs
 
