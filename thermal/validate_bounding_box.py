@@ -4,51 +4,73 @@ Contents:
     - validate_bounding_box: Helper function to ensure bounding box is valid
     - get_box_features: Helper function to engineer specific features from the bounding box data
     - get_model_prediction: Helper function to run a model on the bounding box features to estimate chick counts
+    
+Main Function (get_box_count):
+    Parameters:
+        - merged_box_indicies: The indicies of the merged overlapping bounding boxes from the full frame
+        - temperature_frame: The full numpy array of temperature data
+        - pipeline: The pre-trained model or pipeline to a model, used for predicting
+        - box: The specific box instance to predict the count of
+    Returns:
+        - An int of the predicted counts within that box
 '''
 
 import joblib  # Loading models
 import numpy as np  # General computations and stuff
-from typing import List, Tuple  # Type hinting
-from ultralytics.yolo.engine.results import Results as YOLOResults  # YOLO results object
+from typing import List, Tuple, Optional, Union  # Type hinting
+from ultralytics.engine.results import Results as YOLOResults  # YOLO results object
+from ultralytics.engine.results import Boxes
 from sklearn.svm import SVC  # Example model, replace with actual model as needed
-import backend.thermal_poc.utils.get_thermal_features as gtf  # Importing feature extraction functions
+import utils.get_thermal_features as gtf  # Importing feature extraction functions
 import cv2  # Image processing
 from datetime import datetime  # Timestamping for saved files
 import csv  # Saving results to CSV
 
 __all__ = ["get_box_count"]
 
-MIN_BOX_THRESHOLD = 10  # Minimum size of a bounding box to be considered valid (in pixels) - May need to be adjusted
+MIN_BOX_THRESHOLD = 10  # Minimum height/width of a bounding box to be considered valid (in pixels)
 
 # Main functionality to map bounding box coordinates to a specific chick count
 def get_box_count(
-    box: YOLOResults[0].boxes[0],  # A specific box from a YOLO result
-    temperature_frame: np.array,  # The full numpy array of temperature data for the entire frame
-    model,  # The pre-trained model to estimate chick counts
+    pipeline,  # The pre-trained model pipeline to estimate chick counts
+    temperature_frame: Optional[np.ndarray] = None,  # The full numpy array of temperature data for the entire frame
+    box: Optional[Union[Boxes, np.ndarray, list, tuple]] = None,  # Box to process
 ) -> int:
     '''
     Map a bounding box to a specific chick count.
     Parameters:
         box: A specific yolo box instance
         temperature_data: The full numpy array of temperature data for the entire frame
+        pipeline: The pre-trained pipeline/model to estimate the box contents
     Returns:
         int: Estimated number of chicks in the given bounding box
     '''
     
-    # Extract necessary data
-    x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()  # Dimensions and position from the box
+    skip_extraction: bool = False  # Flag to skip temperature extract if it is already provided
+    box_temp_data: np.ndarray = temperature_frame  # Initialize box temperature data with full frame data
     
-    # Ensure that the bounding box is valid before computing
-    if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return
+    # Extract necessary data with type checking
+    if isinstance(box, Boxes):
+        x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
+    elif isinstance(box, (list, np.ndarray)):
+        skip_extraction = True
+    elif isinstance(box, tuple):
+        x_min, y_min, x_max, y_max = map(float, box)
+    else:
+        raise TypeError(f"Unsupported box type: {type(box)}")
     
-    # Extract the specific temperatures of the bounding box from the full frame
-    box_temp_data = temperature_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
-    
+    if not skip_extraction:
+        # Ensure that the bounding box is valid before computing
+        if not validate_bounding_box([x_min, y_min, x_max, y_max], temperature_frame.shape): return None
+        
+        # Extract the specific temperatures of the bounding box from the full frame
+        box_temp_data = temperature_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
+        
     # Extract specific features from the bounding box data
     box_features = get_box_features(box_temp_data)
     
     # Run the helper model to predict counts in specific bounding boxes
-    estimated_count = get_model_prediction(features=box_features, model=model, save_all=True, temp_data=box_temp_data)
+    estimated_count = get_model_prediction(features=box_features, pipeline=pipeline, save_all=False, temp_data=box_temp_data)
     
     return estimated_count
 
@@ -81,7 +103,7 @@ def validate_bounding_box(
 
 # Helper function to engineer specific features from the bounding box data
 def get_box_features(
-    box: YOLOResults[0].boxes[0],  # A specific box instance from a results object
+    box: np.ndarray,  # A specific box instance from a results object
 ) -> np.ndarray:
     '''
     Extract features from the contents of a bounding box to pass into a model
@@ -92,18 +114,17 @@ def get_box_features(
     '''
     x = list()  # Initializing list to hold features
     
-    # Feature Extraction - TODO TEST THESE & OPTIMIZE NEXT WEEK
     x.append(gtf.get_area(box))  # Total area of the bounding box
     x.append(gtf.get_mean_temperature(box))  # Mean temperature in the bounding box
     x.append(gtf.get_temperature_std(box))  # Standard deviation of temperatures
     x.append(gtf.get_temperature_variance(box))  # Variance of temperatures
     x.append(gtf.get_temperature_range(box))  # Range of temperatures
-    x.append(gtf.get_pixels_over_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels over 30C
-    x.append(gtf.get_pixels_under_threshold(box, threshold=30.0, relative=True))  # Relative count of pixels under 30C
-    x.append(gtf.get_mean_distance_from_threshold(box, threshold=30.0))  # Mean distance from 30C
+    x.append(gtf.get_pixels_over_threshold(box, threshold=.8, relative=True))  # Relative count of pixels over 30C
+    x.append(gtf.get_pixels_under_threshold(box, threshold=.8, relative=True))  # Relative count of pixels under 30C
+    x.append(gtf.get_mean_distance_from_threshold(box, threshold=.8))  # Mean distance from 30C
     x.append(gtf.get_aspect_ratio(box))  # Aspect ratio of the bounding box
-    x.append((gtf.get_estimated_segment_objects_scipy(box, threshold=30.0)))  # Estimated number of objects in the box using scipy labeling
-    x.append((gtf.get_estimated_segment_objects_contours(box, threshold=35.0)))  # Estimated number of objects in the box using cv2 contours
+    #x.append((gtf.get_estimated_segment_objects_scipy(box, threshold=.8)))  # Estimated number of objects in the box using scipy labeling
+    #x.append((gtf.get_estimated_segment_objects_contours(box, threshold=.8)))  # Estimated number of objects in the box using cv2 contours
     
     # Convert to numpy array and return
     return np.array(x)
@@ -111,18 +132,29 @@ def get_box_features(
 # Helper function to run a model on the bounding box features to estimate chick counts
 def get_model_prediction(
     features: any,  # The features extracted from the bounding box data
-    model: any,  # The pre-trained model to estimate chick counts
+    pipeline: any,  # The pre-trained model to estimate chick counts
     save_all: bool = False,  # Flag to save each prediction for analysis
-    temp_data: np.array = None  # The raw temperature data for the bounding box, if saving is enabled
+    temp_data: Optional[np.ndarray] = None  # The raw temperature data for the bounding box, if saving is enabled
 ) -> int:
     '''
     Run a helper model on the extracted features to estimate chick counts
     Parameters:
         features: The features extracted from the bounding box data
+        pipeline: The sklearn pipeline/model object used to estimate the per-bounding-box chick counts
+        save_all: Optional flag to save the results
+        temp_data: Optional numpy array of data, used for saving
     Returns:
         int: Estimated number of chicks in the bounding box
     '''
-    results: int =  model.predict([features])[0]
+    # Validation to ensure features and pipeline are defined
+    if features is None or pipeline is None:
+        raise ValueError("Both 'features' and 'model' must be provided.")
+    
+    # Reshape the model for the pipeline
+    _features = np.asarray(features).reshape(1, -1)
+    
+    # Retreive the predictions, saving the model results if set to true
+    results: int =  pipeline.predict(_features)[0]
     if save_all:
         save_model_results(temp_data=temp_data, features=features, results=results)
     return results
