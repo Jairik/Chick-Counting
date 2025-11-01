@@ -14,7 +14,7 @@ def get_mean_temperature(box: np.array) -> float:
     '''
     return np.mean(box)
 
-def get_pixels_over_threshold(box: np.array, threshold: float, relative: bool = True) -> int:
+def get_pixels_over_threshold(box: np.array, threshold: float = .9, relative: bool = True) -> int:
     '''
     Get the number of pixels over a certain temperature threshold
     '''
@@ -23,7 +23,7 @@ def get_pixels_over_threshold(box: np.array, threshold: float, relative: bool = 
         return x / get_area(box)
     return x
 
-def get_pixels_under_threshold(box: np.array, threshold: float, relative: bool = True) -> int:
+def get_pixels_under_threshold(box: np.array, threshold: float = .9, relative: bool = True) -> int:
     '''
     Get the number of pixels under a certain temperature threshold
     '''
@@ -50,7 +50,7 @@ def get_temperature_variance(box: np.array) -> float:
     '''
     return np.var(box)
 
-def get_mean_distance_from_threshold(box: np.array, threshold: float) -> float:
+def get_mean_distance_from_threshold(box: np.array, threshold: float = .9) -> float:
     '''
     Get the mean distance from a certain temperature threshold
     '''
@@ -62,7 +62,7 @@ def get_aspect_ratio(box: np.array) -> float:
     '''
     return box.shape[0] / box.shape[1]
 
-def get_estimated_segment_objects_scipy(box: np.array, threshold: float) -> int:
+def get_estimated_segment_objects_scipy(box: np.array, threshold: float = .9) -> int:
     '''
     Estimate the number of objects in a bounding box by segmenting based on a temperature threshold
     '''
@@ -71,7 +71,7 @@ def get_estimated_segment_objects_scipy(box: np.array, threshold: float) -> int:
     labeled, num_objects = label(mask)
     return num_objects
 
-def get_estimated_segment_objects_contours(box: np.array, threshold: float) -> int:
+def get_estimated_segment_objects_contours(box: np.array, threshold: float = .9) -> int:
     '''
     Estimate the number of objects in a bounding box by segmenting based on a temperature threshold using contours
     '''

@@ -3,6 +3,8 @@ numpy==2.2.6
 scipy==1.16.2
 pandas>=2.2,<3.0
 polars==1.33.1
+scikit-learn
+opencv-python
 
 # ---- Plotting
 matplotlib==3.10.6
@@ -66,4 +68,6 @@ sympy==1.14.0
 mpmath==1.3.0
 fsspec==2025.9.0
 pyzmq==27.1.0
+supervision
+blosc
 uv  # Just for faster installs and runs

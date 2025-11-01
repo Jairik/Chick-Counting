@@ -4,6 +4,7 @@ from typing import Literal
 import blosc
 import numpy as np
 import matplotlib.pyplot as plt
+from ultralytics.engine.results import Results
 
 __all__ = ['result_to_temp_frame']
 
@@ -40,14 +41,13 @@ def result_to_temp_frame(
         fps: float = 30.0,
         prev_hi_val: float | None = None,
         prev_lo_val: float | None = None
-    ) -> np.array:
+    ) -> tuple[np.ndarray, float, float]:
     ''' Given a YOLO results object, will denormalize the thermal image and extract the raw temperature data '''
     
     # Fixed location of the heatbar
     x1 = 190
     y1 = 57
     y2 = 240
-    
     w1 = 60
     h1 = 18
 
@@ -56,11 +56,11 @@ def result_to_temp_frame(
     ROI_LOW  = (x1, y2, w1, h1)
 
     # Getting the BGR frame from the YOLO result
-    frame = _extract_bgr_from_yolo_res(yolo_result)
+    frame = _extract_bgr_from_yolo_res(result)
     t = frame_idx / (fps or 30.0)
 
     # Only run OCR every four frames; otherwise carry forward previous values
-    if (frame_idx % 4) > 0:
+    if (frame_idx % 4) != 1:
         if prev_hi_val is None or prev_lo_val is None:
             raise ValueError("prev_hi_val/prev_lo_val required for non-OCR frames (frame_idx % 4 > 0).")
         hi_val = prev_hi_val
@@ -76,8 +76,18 @@ def result_to_temp_frame(
         hi_val = ocr_number(prep(hi_roi))
         lo_val = ocr_number(prep(lo_roi))
 
+        # if OCR missed but we have previous → reuse
+        if hi_val is None and prev_hi_val is not None:
+            hi_val = prev_hi_val
+        if lo_val is None and prev_lo_val is not None:
+            lo_val = prev_lo_val
+
     if hi_val is None or lo_val is None:
         raise ValueError(f"OCR failed for hi/lo temps. Got (hi, lo)=({hi_val}, {lo_val}).")
+
+    # if OCR gave us flipped values (like hi=2.4, lo=15.7) → swap them
+    if hi_val < lo_val:
+        hi_val, lo_val = lo_val, hi_val
 
     # Build a temp table
     temp_rngs = np.asarray([(frame_idx, t, hi_val, lo_val)], dtype=object)
@@ -100,11 +110,17 @@ def result_to_temp_frame(
     df_t = hi_t - lo_t  # Getting the value range for proper scaling
     
     if df_t < 0:
-        raise ValueError(f"negative hi-lo temp difference, impossible. GOT (hi, lo)=({hi_val}, {lo_val})")
+        # as a last resort, if we still got a negative diff but have prevs, reuse them
+        if prev_hi_val is not None and prev_lo_val is not None:
+            hi_t = float(prev_hi_val)
+            lo_t = float(prev_lo_val)
+            df_t = hi_t - lo_t
+        if df_t < 0:
+            raise ValueError(f"negative hi-lo temp difference, impossible. GOT (hi, lo)=({hi_val}, {lo_val})")
     
     # Scale the matrix by the real temp range
     norm_frame *= df_t
     # Displace the values of the scaled matrix to sit in the real temperature values 
     norm_frame += lo_t
 
-    return norm_frame  # Return the raw temperature array for this frame
+    return norm_frame, float(hi_val), float(lo_val)  # Return the raw temperature array for this frame, plus the hi/lo we used
