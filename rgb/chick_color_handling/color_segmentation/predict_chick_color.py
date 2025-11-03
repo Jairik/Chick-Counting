@@ -4,8 +4,8 @@
 MODEL_PATH         = ""
 IMAGE_PATH         = ""
 OUTPUT_PATH        = ""
-THRESHOLD          = 0.50
-DIM_FACTOR         = 0.30
+THRESHOLD          = 0.90
+DIM_FACTOR         = 0.00
 # ————————————————————————————————————————————————————————————
 
 import os, joblib
