@@ -4,7 +4,7 @@
 # ——— CONFIG —————————————————————————————————————————————————
 CHICK_PIXELS_PATH       = ""
 NON_CHICK_PIXELS_PATH   = ""
-MODEL_PATH              = ""
+MODEL_PATH              = ""  # .joblib ext
 VAL_SPLIT               = 0.20
 # ————————————————————————————————————————————————————————————
 
@@ -25,10 +25,10 @@ def load_npy_lib(path):
 def build_model():
 	base = Pipeline([
 		("scaler", StandardScaler()),
-		("lr", LogisticRegression(max_iter=2000, class_weight="balanced", solver="lbfgs"))
+		("lr", LogisticRegression(max_iter=2000, class_weight="balanced", solver="lbfgs", verbose=1))
 	])
 
-	return CalibratedClassifierCV(base_estimator=base, method="isotonic", cv=3)
+	return CalibratedClassifierCV(estimator=base, method="isotonic", cv=3)
 
 def main():
 	chick = load_npy_lib(CHICK_PIXELS_PATH)
@@ -44,7 +44,7 @@ def main():
 	model = build_model()
 	model.fit(make_features(X_train), y_train)
 
-	proba_val = model.predict_proba(make_features(X_train))[:, 1]
+	proba_val = model.predict_proba(make_features(X_val))[:, 1]
 	auc = roc_auc_score(y_val, proba_val)
 	acc = ((proba_val >= 0.5).astype(np.uint8) == y_val).mean()
 
