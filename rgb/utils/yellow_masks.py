@@ -6,7 +6,7 @@ from typing import Tuple
 
 __all__ = ['get_yellow_mask']
 
-def get_yellow_mask(image: np.array, normalize: bool = True) -> np.array:
+def get_yellow_mask(img: np.array, normalize: bool = True) -> np.array:
     '''
     Generate a yellow mask of the image
     Parameters:
@@ -17,7 +17,7 @@ def get_yellow_mask(image: np.array, normalize: bool = True) -> np.array:
     '''
     
     # Ensure the image if of float32 representation
-    img = img.astype(np.float32) / 255.0 if normalized else img.astype(np.float32)
+    img = img.astype(np.float32) / 255.0 if normalize else img.astype(np.float32)
     
     # Extract RGB values
     R = img[..., 0]
