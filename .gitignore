@@ -15,3 +15,4 @@ backend/proof_of_concept/demo_mount/output/marble_bgsg_retrtree.avi
 /.conda
 /rgb/object_counting_output.avi
 /thermal/.venv
+/rgb/tmp_runtrain_data.pkl
