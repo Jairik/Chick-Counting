@@ -17,30 +17,35 @@ def group_and_merge_bounding_boxes(xyxy: np.ndarray, tracker_ids: List[Any], tar
     - target_tracker_id: The target tracker ID to group and merge boxes.
     - iou_thresh: IoU threshold to consider boxes as overlapping.
     '''
-    # Find which detection(s) belong to this tracker
+    # Find all detections for this tracker
     target_indices = [i for i, tid in enumerate(tracker_ids) if tid == target_tracker_id]
-    if not target_indices: return None
-    
-    # Group all bounding boxes
-    groups = group_bounding_boxes(xyxy=xyxy[target_indices], iou_thresh=iou_thresh)
-    
-    # Find which group contains the target indices
+    if not target_indices:
+        return None
+
+    # Group *only* those boxes
+    sliced_boxes = xyxy[target_indices]  # shape (M, 4)
+    groups = group_bounding_boxes(sliced_boxes, iou_thresh=iou_thresh)
+
+    # The target in the sliced array is index 0 (because target_indices[0] -> sliced_boxes[0])
     target_group = None
-    first_target_index = target_indices[0]
     for g in groups:
-        if first_target_index in g:
+        if 0 in g:
             target_group = g
             break
-    if target_group is None: return None  # Error checking, shouldn't happen
-    
-    # Get the boxes and ids for the target group
-    group_boxes = xyxy[target_group]
-    group_ids = [tracker_ids[i] for i in target_group]
-    
-    # Merge the boxes in the target group
-    merged_box = merge_group_bounding_box(xyxy=xyxy, idxs=target_group)
-    
-    return [merged_box, group_ids]  # Return the merged box and the associated tracker IDs
+    if target_group is None:
+        return None
+
+    # Map sliced indices back to original indices
+    original_group_indices = [target_indices[i] for i in target_group]
+
+    # Merge on the original array using original indices
+    merged_box = merge_group_bounding_box(xyxy=xyxy, idxs=original_group_indices)
+
+    # Collect original tracker ids for that group
+    group_ids = [tracker_ids[i] for i in original_group_indices]
+
+    return merged_box, group_ids
+
 
 # Group bounding boxes based on IoU threshold, not considering IDs
 def group_bounding_boxes(xyxy: np.ndarray, iou_thresh: float = 0.05) -> List[List[int]]:

@@ -53,9 +53,11 @@ def get_box_count(
     if isinstance(box, Boxes):
         x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
     elif isinstance(box, (list, np.ndarray)):
-        skip_extraction = True
+        if len(box) != 4:  # If coordinates, must still extract. Else, assume bounding box as thermal is provided
+            skip_extraction = True
+        x_min, y_min, x_max, y_max = map(int, box)
     elif isinstance(box, tuple):
-        x_min, y_min, x_max, y_max = map(float, box)
+        x_min, y_min, x_max, y_max = map(int, box)
     else:
         raise TypeError(f"Unsupported box type: {type(box)}")
     
