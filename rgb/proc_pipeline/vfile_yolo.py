@@ -10,12 +10,12 @@ Output:
 
 import cv2
 from ultralytics import solutions
-from bbox_utils import BoundingBox, check_and_count
+from bbox_utils import BoundingBox, check_group
 
 # ——— PATH CONFIG —————————————————————————————————————————————————
-VIDEO_PATH        = "C:/Users/anye forti/Desktop/PERDUE FARMS/perdue_rgb_video2_061725.mp4"
-OUTPUT_VIDEO_PATH = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/YOLO Videos/pipeline_test.mp4"
-MODEL_PATH        = "C:/Users/anye forti/Desktop/PERDUE FARMS/chick-test-1/fold_2/runs/detect/train/weights/best.pt"
+VIDEO_PATH        = ""
+OUTPUT_VIDEO_PATH = ""
+MODEL_PATH        = ""
 # —————————————————————————————————————————————————————————————————
 
 # draws counter overlay on the frame showing both YOLO and weighted counts.
@@ -108,19 +108,14 @@ try:
 
         boxes = [tuple(map(int, b)) for b in counter.boxes]
         tids  = counter.track_ids
+        frame_bboxes = [BoundingBox(*coords, obj_id=tids[i]) for i, coords in enumerate(boxes)]
 
         for tid in new_ids:
             idx = tids.index(tid)
-            box_coords = boxes[idx]
+            main_first = [frame_bboxes[idx]] + frame_bboxes[:idx] + frame_bboxes[idx+1:]
             
-            bbox = BoundingBox(*box_coords)
+            total_weighted_count += check_group(main_first)
             
-            count_value = check_and_count(bbox)
-            total_weighted_count += count_value
-            
-            # error checking
-            area = bbox.calculate_area()
-            print(f"Frame {frame_idx}: ID {tid} crossed (count: {count_value}, area: {area})")
 
             rec += 1
             if rec >= in_events:
