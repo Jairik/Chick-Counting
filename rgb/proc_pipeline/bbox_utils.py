@@ -20,10 +20,10 @@ class BoundingBox:
 		self.obj_id = obj_id
 
 	def calculate_area(self):
-		width = max(0, self.x2 - self.x1)
-		height = max(0, self.y2 - self.y1)
+		w = max(0, self.x2 - self.x1)
+		h = max(0, self.y2 - self.y1)
 
-		return width * height
+		return w * h
 
 	def calculate_intersect(self, other):
 		xA = max(self.x1, other.x1)
@@ -36,6 +36,7 @@ class BoundingBox:
 		return w * h
 
 CONJOINED_SEEN = set()
+CONJOINED_PARENT = {}
 
 # ——— CHECK FUNCTIONS —————————————————————————————————————————
 def bbox_key(bbox):
@@ -46,6 +47,7 @@ def bbox_key(bbox):
 
 def reset_conjoined_state():
 	CONJOINED_SEEN.clear()
+	CONJOINED_PARENT.clear()
 
 def check_overfit():
 	return 0
@@ -91,18 +93,29 @@ def combine_n_areas(boxes):
 
 def check_group(frame_boxes):
 	if not frame_boxes:
-		return 0
+		return {
+			'weighted_count': 0,
+			'was_conjoined': False
+			}
 	
 	main = frame_boxes[0]
-	if bbox_key(main) in CONJOINED_SEEN:
-		return 0
+	main_key = bbox_key(main)
+
+	if main_key in CONJOINED_PARENT:
+		return {
+			'weighted_count': 0,
+			'was_conjoined': True,
+			'conjoined_to': CONJOINED_PARENT[main_key],
+			'main_id': main_key
+		}
 
 	selected_boxes = [main]
 	main_area = main.calculate_area()
+	child_ids = []
 
 	for other in frame_boxes[1:]:
 		k = bbox_key(other)
-		if k in CONJOINED_SEEN:
+		if k in CONJOINED_SEEN or k in CONJOINED_PARENT:
 			continue
 
 		other_area = other.calculate_area()
@@ -112,9 +125,16 @@ def check_group(frame_boxes):
 		if iou >= IOU_CONJOIN_THRESHOLD:
 			selected_boxes.append(other)
 			CONJOINED_SEEN.add(k)
+			CONJOINED_PARENT[k] = main_key
+			child_ids.append(k)
 
 	area = combine_n_areas(selected_boxes)
+	wc = check_and_count(area)
 
-	return check_and_count(area)
-
-# —————————————————————————————————————————————————————————————
+	return {
+		'weighted_count': wc,
+		'area': area,
+		'main_id': main_key,
+		'conjoined_ids': child_ids,
+		'was_conjoined': False
+	}
