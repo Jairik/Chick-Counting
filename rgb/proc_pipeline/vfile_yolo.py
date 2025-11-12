@@ -18,12 +18,12 @@ from bbox_utils import BoundingBox, check_group, reset_conjoined_state
 
 # ——— PATH CONFIG —————————————————————————————————————————————————
 VIDEO_PATH          = r"C:\Users\anye forti\Desktop\PERDUE FARMS\perdue_rgb_video2_061725.mp4"
-OUTPUT_VIDEO_PATH   = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/YOLO Videos/yolo_count_proc_v2_pt2.mp4"
+OUTPUT_VIDEO_PATH   = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/YOLO Videos/yolo_count_proc_v2_val.mp4"
 MODEL_PATH          = r"c:\Users\anye forti\Desktop\PERDUE FARMS\chick-test-1\fold_2\runs\detect\train\weights\best.pt"
 
 ENABLE_XLSX_EXPORT  = True
-XLSX_PATH           = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/rgb/data/weighted_count_data_v2_pt2.xlsx"
-SNAPSHOT_DIR        = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/bbox-snapshots2"
+XLSX_PATH           = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/rgb/data/weighted_count_data_v2_val.xlsx"
+SNAPSHOT_DIR        = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/bbox-snapshots_val"
 SNAPSHOT_NAME_FMT   = "frame{frame:05d}_id{tid}.png"
 # —————————————————————————————————————————————————————————————————
 
@@ -117,6 +117,7 @@ total_weighted_count = 0
 main_rows = []
 conjoined_rows = []
 CHILD_HISTORY = set()
+PARENT_HISTORY = set()
 
 # ——— PROCESS VIDEO STREAM ————————————————————————————————————————
 frame_idx = 0
@@ -130,14 +131,13 @@ try:
         reset_conjoined_state()
 
         prev_ids = set(counter.counted_ids)
-        prev_in  = counter.in_count
 
         annotated = counter.count(frame)
         
         draw_counter_overlay(annotated, counter.in_count, total_weighted_count)
         
-        cv2.imshow("YOLO Object Counter", annotated)
-        cv2.waitKey(1)
+        #cv2.imshow("YOLO Object Counter", annotated)
+        #cv2.waitKey(1)
         
         writer_vid.write(annotated)
 
@@ -159,7 +159,12 @@ try:
                 continue
 
             idx = tids.index(tid)
-            main_first = [frame_bboxes[idx]] + frame_bboxes[:idx] + frame_bboxes[idx+1:]
+            main_box = frame_bboxes[idx]
+
+            other_boxes = frame_bboxes[:idx] + frame_bboxes[idx+1:]
+            other_boxes = [box for box in other_boxes if (box.obj_id not in PARENT_HISTORY)]
+
+            main_first = [main_box] + other_boxes
             meta = check_group(main_first)
             
             if meta.get('was_conjoined'):
@@ -171,9 +176,11 @@ try:
 
             parent_id = meta.get('main_id', tid)
             child_ids = meta.get('conjoined_ids', [])
+            child_ids = [child for child in child_ids if child not in PARENT_HISTORY]
+            PARENT_HISTORY.add(parent_id)
 
-            for c in child_ids:
-                CHILD_HISTORY.add(c)
+            for child in child_ids:
+                CHILD_HISTORY.add(child)
 
             total_weighted_count += meta.get('weighted_count', 0)
 
@@ -183,7 +190,7 @@ try:
 
                 main_rows.append({
                     'frame': frame_idx,
-                    'main_id': meta.get('main_id', tid),
+                    'main_id': parent_id,
                     'area': meta.get('area', None),
                     'weighted_ct': meta.get('weighted_count', 0),
                     'snapshot_link': make_snapshot_hyperlink(frame_idx, tid)
