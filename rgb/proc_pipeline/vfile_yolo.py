@@ -13,21 +13,44 @@ Output:
 import cv2
 import os
 import pandas as pd
+import torch
+import platform
 from ultralytics import solutions
 from bbox_utils import BoundingBox, check_group, reset_conjoined_state
+from datetime import datetime
 
 # ——— PATH CONFIG —————————————————————————————————————————————————
 VIDEO_PATH          = r"C:\Users\anye forti\Desktop\PERDUE FARMS\perdue_rgb_video2_061725.mp4"
 OUTPUT_VIDEO_PATH   = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/YOLO Videos/yolo_count_proc_v2_val.mp4"
 MODEL_PATH          = r"c:\Users\anye forti\Desktop\PERDUE FARMS\chick-test-1\fold_2\runs\detect\train\weights\best.pt"
 
-ENABLE_XLSX_EXPORT  = True
+ENABLE_XLSX_EXPORT  = False
+ENABLE_STOPWATCH    = True
+ENABLE_DISPLAY      = False
+ENABLE_VIDEO_EXPORT = False
+
 XLSX_PATH           = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/rgb/data/weighted_count_data_v2_val.xlsx"
 SNAPSHOT_DIR        = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/bbox-snapshots_val"
 SNAPSHOT_NAME_FMT   = "frame{frame:05d}_id{tid}.png"
+DEVICE              = "cuda:0"
 # —————————————————————————————————————————————————————————————————
 
-# draws counter overlay on the frame showing both YOLO and weighted counts.
+
+# ——— HELPER FUNCTIONS ————————————————————————————————————————————
+def device_used():
+    if DEVICE.startswith("cuda") and torch.cuda.is_available():
+        try:
+            device_type = DEVICE
+            device_id = int(DEVICE.split(":")[1]) if ":" in DEVICE else 0
+            device_name = torch.cuda.get_device_name(device_id)
+        except:
+            device_name = "Unknown CUDA"
+    else:
+        device_type = "CPU"
+        device_name = platform.processor() or "Unknown CPU"
+
+    return (device_type, device_name)
+
 def draw_counter_overlay(frame, yolo_count, weighted_count):
     h, w = frame.shape[:2]
     
@@ -64,7 +87,6 @@ def draw_counter_overlay(frame, yolo_count, weighted_count):
         y_pos = first_line_y + (i * line_spacing)
         cv2.putText(frame, line, (x_left + padding, y_pos), font, font_scale, text_color, thickness)
 
-# ——— HELPER FUNCTIONS —————————————————————————————————————————————
 def snapshot_name_format(frame_idx, tid):
     return SNAPSHOT_NAME_FMT.format(frame=frame_idx, tid=tid)
 
@@ -93,7 +115,7 @@ def make_snapshot_hyperlink(frame_idx, tid):
 
     return f'=HYPERLINK("{link}", "{file}")'
 
-# ——— SETUP VIDEO + COUNTER ————————————————————————————————————————
+# ——— SETUP VIDEO + COUNTER ———————————————————————————————————————
 cap = cv2.VideoCapture(VIDEO_PATH)
 assert cap.isOpened(), "Could not open input video"
 
@@ -101,16 +123,17 @@ w   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h   = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS)
 
-fourcc     = cv2.VideoWriter_fourcc(*"mp4v")
-writer_vid = cv2.VideoWriter(OUTPUT_VIDEO_PATH, fourcc, fps, (w, h))
-assert writer_vid.isOpened(), "Could not open output video"
+if ENABLE_VIDEO_EXPORT:
+    fourcc     = cv2.VideoWriter_fourcc(*"mp4v")
+    writer_vid = cv2.VideoWriter(OUTPUT_VIDEO_PATH, fourcc, fps, (w, h))
+    assert writer_vid.isOpened(), "Could not open output video"
 
 counter = solutions.ObjectCounter(
     show=False,
     region=[(320, 560), (1820, 540)],
     model=MODEL_PATH,
     line_width=2,
-    device="cuda:0",
+    device=DEVICE,
 )
 
 total_weighted_count = 0
@@ -121,6 +144,10 @@ PARENT_HISTORY = set()
 
 # ——— PROCESS VIDEO STREAM ————————————————————————————————————————
 frame_idx = 0
+
+if ENABLE_STOPWATCH:
+    start = datetime.now()
+
 try:
     while True:
         ret, frame = cap.read()
@@ -136,10 +163,12 @@ try:
         
         draw_counter_overlay(annotated, counter.in_count, total_weighted_count)
         
-        #cv2.imshow("YOLO Object Counter", annotated)
-        #cv2.waitKey(1)
+        if ENABLE_DISPLAY:
+            cv2.imshow("YOLO Object Counter", annotated)
+            cv2.waitKey(1)
         
-        writer_vid.write(annotated)
+        if ENABLE_VIDEO_EXPORT:
+            writer_vid.write(annotated)
 
         new_ids   = set(counter.counted_ids) - prev_ids
 
@@ -210,9 +239,26 @@ except KeyboardInterrupt:
     print("Interrupted—saving outputs so far.")
 
 finally:
+    if ENABLE_STOPWATCH:
+        end = datetime.now()
+        proc_duration = (end - start).total_seconds()
+        proc_fps = frame_idx / proc_duration
+        rtf = proc_fps / fps
+        device_type, device_name = device_used()
+        
+        print(f"\nDevice Type: {device_type}")
+        print(f"Device Name: {device_name}")
+        print(f"Processed fps: {proc_fps:.4f}")
+        print(f"True fps: {fps:.4f}")
+        print(f"Real-time factor: {rtf:.4f}")
+
     cap.release()
-    writer_vid.release()
-    cv2.destroyAllWindows()
+    if ENABLE_VIDEO_EXPORT:
+        writer_vid.release()
+        print(f"Annotated video: {OUTPUT_VIDEO_PATH}")
+
+    if ENABLE_DISPLAY:
+        cv2.destroyAllWindows()
 
     if ENABLE_XLSX_EXPORT:
         os.makedirs(os.path.dirname(XLSX_PATH), exist_ok=True)
@@ -226,7 +272,5 @@ finally:
 
         print(f"Spreadsheet written: {XLSX_PATH}")
 
-    print(f"\nDone processing {frame_idx} frames.")
     print(f"Total YOLO count: {counter.in_count}")
     print(f"Total weighted count: {total_weighted_count}")
-    print(f"Annotated video: {OUTPUT_VIDEO_PATH}")
