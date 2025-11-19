@@ -6,7 +6,7 @@ Input:
 - custom chick-trained model
 - file paths for count snapshots and xlsx data file
 Output:
-- annotated chick video with both YOLO and weighted counts
+- annotated chick video with YOLO counts, weighted counts, and true counts
 - xlsx data file for weighted counts
 """
 
@@ -23,11 +23,12 @@ from datetime import datetime
 VIDEO_PATH          = r"C:\Users\anye forti\Desktop\PERDUE FARMS\perdue_rgb_video2_061725.mp4"
 OUTPUT_VIDEO_PATH   = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/YOLO Videos/yolo_count_proc_v2_val.mp4"
 MODEL_PATH          = r"c:\Users\anye forti\Desktop\PERDUE FARMS\chick-test-1\fold_2\runs\detect\train\weights\best.pt"
+TRUE_COUNT_PATH     = r"C:\Users\anye forti\Desktop\PERDUE FARMS\chick-results\counts_v2.csv"
 
 ENABLE_XLSX_EXPORT  = False
-ENABLE_STOPWATCH    = True
-ENABLE_DISPLAY      = False
-ENABLE_VIDEO_EXPORT = False
+ENABLE_STOPWATCH    = False
+ENABLE_DISPLAY      = True
+ENABLE_VIDEO_EXPORT = True
 
 XLSX_PATH           = "C:/Users/anye forti/Desktop/2025 SPRING/425 COSC/YOLO_TESTING/Chick-Counting/rgb/data/weighted_count_data_v2_val.xlsx"
 SNAPSHOT_DIR        = "C:/Users/anye forti/Desktop/2025 FALL/426 COSC/YOLO_TESTING/bbox-snapshots_val"
@@ -51,7 +52,7 @@ def device_used():
 
     return (device_type, device_name)
 
-def draw_counter_overlay(frame, yolo_count, weighted_count):
+def draw_counter_overlay(frame, yolo_count, weighted_count, true_count):
     h, w = frame.shape[:2]
     
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -67,7 +68,8 @@ def draw_counter_overlay(frame, yolo_count, weighted_count):
     
     text_lines = [
         f"YOLO Count: {yolo_count}",
-        f"Weighted Count: {weighted_count}"
+        f"Weighted Count: {weighted_count}",
+        f"True Count: {true_count}"
     ]
     
     max_width = max([cv2.getTextSize(line, font, font_scale, thickness)[0][0] for line in text_lines])
@@ -115,6 +117,25 @@ def make_snapshot_hyperlink(frame_idx, tid):
 
     return f'=HYPERLINK("{link}", "{file}")'
 
+# ——— LOAD TRUE COUNT —————————————————————————————————————————————
+true_ct_updates = []
+
+if TRUE_COUNT_PATH and os.path.exists(TRUE_COUNT_PATH):
+    df = pd.read_csv(TRUE_COUNT_PATH)
+
+    grouped = (
+        df
+        .groupby('frame_index')['real_count']
+        .max()
+        .reset_index()
+        .sort_values('frame_index')
+    )
+
+    true_ct_updates = list(zip(grouped['frame_index'], grouped['real_count']))
+
+current_true_ct = 0
+current_ct_idx = 0
+
 # ——— SETUP VIDEO + COUNTER ———————————————————————————————————————
 cap = cv2.VideoCapture(VIDEO_PATH)
 assert cap.isOpened(), "Could not open input video"
@@ -155,13 +176,18 @@ try:
             break
         frame_idx += 1
 
+        while (current_ct_idx < len(true_ct_updates) and 
+               true_ct_updates[current_ct_idx][0] <= frame_idx):
+            current_true_ct = true_ct_updates[current_ct_idx][1]
+            current_ct_idx += 1
+
         reset_conjoined_state()
 
         prev_ids = set(counter.counted_ids)
 
         annotated = counter.count(frame)
         
-        draw_counter_overlay(annotated, counter.in_count, total_weighted_count)
+        draw_counter_overlay(annotated, counter.in_count, total_weighted_count, current_true_ct)
         
         if ENABLE_DISPLAY:
             cv2.imshow("YOLO Object Counter", annotated)
